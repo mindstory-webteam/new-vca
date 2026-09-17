@@ -1,0 +1,4 @@
+import {PageIntro,InlineCta} from '@/components/shared';
+import {ServiceExplorer} from '@/components/service-explorer';
+export const metadata={title:'Viral Cat Services — The Cat Family',description:'Explore and compare six local marketing services: strategy, content, social media, discovery, local campaigns and creator collaborations.',alternates:{canonical:'/services'}};
+export default function Page(){return <><PageIntro eyebrow="SIX WAYS TO GET CLOSER" title="A little Cat." accent="A lot of possibility." description="From your first local introduction to your next meaningful enquiry. Choose the support that fits your business."/><section className="container content-area"><ServiceExplorer/><div className="callout"><strong>Cat Tracks connects the dots.</strong><p>We review the work, available response and feedback from your team, then use those learnings to shape the next step.</p></div></section><InlineCta/></>}
