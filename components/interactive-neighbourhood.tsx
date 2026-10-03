@@ -9,8 +9,21 @@ import {Label} from '@/components/ui/label';
 import {Checkbox} from '@/components/ui/checkbox';
 import {industries} from '@/lib/content';
 import {buildLocalCaption} from '@/lib/cat-interactions';
+import {
+  sendLeadToBigin,
+  createLeadId,
+  splitName,
+  orNull,
+  mapBudgetToBigin,
+  parseBudgetAmount,
+  closingDateFromTiming,
+  readUtm,
+} from '@/lib/bigin-bridge';
 
 export {LocalStoryCarousel as LocalLens} from '@/components/local-story-carousel';
+
+const TONES:Record<string,string>={friendly:'Warm & friendly',playful:'A little playful',clear:'Clear & simple'};
+const ACTIONS:Record<string,string>={visit:'Visit the business',enquire:'Start a conversation',appointment:'Ask about an appointment'};
 
 export function CaptionRemixer(){
   const [industry,setIndustry]=useState('food'),[tone,setTone]=useState('friendly'),[action,setAction]=useState('visit'),[business,setBusiness]=useState(''),[location,setLocation]=useState(''),[detail,setDetail]=useState(''),[budget,setBudget]=useState(''),[copied,setCopied]=useState(false),[copyError,setCopyError]=useState('');
@@ -27,11 +40,8 @@ export function CaptionRemixer(){
     catch{setCopyError('Select the caption in the preview to copy it.')}
   }
 
-  async function submit(e:React.FormEvent){
-    e.preventDefault();
-    if(busy||!submissionId)return;
-    if(!consent){setError('Please agree to share these details for your enquiry.');return}
-    setBusy(true);setError('');
+  /** 1. Save on the website (/api/briefs), like before. */
+  async function saveToSite():Promise<{ok:true;reference:string}|{ok:false;error:string}>{
     try{
       const response=await fetch('/api/briefs',{
         method:'POST',
@@ -44,14 +54,111 @@ export function CaptionRemixer(){
           timing:'Let’s discuss',links:'',budget,assessment:'',consent:true
         })
       });
-      const result=await response.json() as {saved?:boolean;reference?:string;error?:string};
-      if(!response.ok||!result.saved||!result.reference)throw new Error(result.error||'Could not save your brief. Please try again.');
-      setReference(result.reference);
-    }catch(err){
-      setError(err instanceof Error?err.message:'Could not save your brief. Please try again.');
-    }finally{
-      setBusy(false);
+      const result=await response.json().catch(()=>({})) as {saved?:boolean;reference?:string;error?:string};
+      if(!response.ok||!result.saved||!result.reference)return {ok:false,error:result.error||'Could not save your brief. Please try again.'};
+      return {ok:true,reference:result.reference};
+    }catch{
+      return {ok:false,error:'Could not save your brief. Please try again.'};
     }
+  }
+
+  /** 2. Send the same enquiry to Bigin. Extra fields go into Description as text. */
+  function sendToBigin(leadId:string){
+    const industryName=industries.find(i=>i.id===industry)?.name||industry;
+    const {firstName,lastName}=splitName(name);
+    const utm=readUtm();
+    const pageUrl=window.location.href;
+    const company=business.trim()||name.trim();
+
+    const description=[
+      'CAPTION REMIXER ENQUIRY',
+      `Reference: ${leadId}`,
+      `Submitted: ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`,
+      '',
+      'CAPTION THEY CREATED',
+      caption,
+      '',
+      'CAPTION SETTINGS',
+      `Industry: ${orNull(industryName)}`,
+      `Tone: ${TONES[tone]||tone}`,
+      `Invite people to: ${ACTIONS[action]||action}`,
+      `Their detail: ${orNull(detail)}`,
+      '',
+      'CONTACT',
+      `Name: ${orNull(name)}`,
+      `Email: ${orNull(email)}`,
+      `Phone: ${orNull(phone)}`,
+      '',
+      'BUSINESS',
+      `Business: ${orNull(business)}`,
+      `Neighbourhood: ${orNull(location)}`,
+      `Budget (as entered): ${orNull(budget)}`,
+      'Services: Content production, Social media',
+      'Main priority: Local presence',
+      'Timing: Let’s discuss',
+      '',
+      'TRACKING',
+      `Page: ${pageUrl}`,
+      `UTM source: ${orNull(utm.source)}`,
+      `UTM medium: ${orNull(utm.medium)}`,
+      `UTM campaign: ${orNull(utm.campaign)}`,
+      `UTM content: ${orNull(utm.content)}`,
+      `UTM term: ${orNull(utm.term)}`,
+    ].join('\n');
+
+    const stageQuestions=[
+      `Website reference: ${leadId}`,
+      'Form: Caption Remixer',
+      `Business: ${orNull(business)}`,
+      `Location: ${orNull(location)}`,
+      `Industry: ${orNull(industryName)}`,
+      `Tone: ${TONES[tone]||tone}`,
+      `Budget: ${orNull(budget)}`,
+      `Email: ${orNull(email)}`,
+      '',
+      'Caption:',
+      caption,
+    ].join('\n');
+
+    return sendLeadToBigin({
+      leadId,
+      leadName:`${company} – ${name.trim()} (Caption Remixer)`,
+      firstName,
+      lastName,
+      mobile:phone,
+      companyName:company,
+      location,
+      amount:parseBudgetAmount(budget),
+      service:'Digital Marketing',
+      budget:mapBudgetToBigin(budget),
+      closingDate:closingDateFromTiming('Let’s discuss'),
+      description,
+      stageQuestions,
+      consent,
+      leadPageUrl:pageUrl,
+      utmSource:utm.source,
+      utmCampaign:utm.campaign,
+      utmContent:utm.content,
+    });
+  }
+
+  async function submit(e:React.FormEvent){
+    e.preventDefault();
+    if(busy||!submissionId)return;
+    if(!consent){setError('Please agree to share these details for your enquiry.');return}
+    setBusy(true);setError('');
+
+    const site=await saveToSite();
+    const ref=site.ok?site.reference:createLeadId();
+    const biginOk=await sendToBigin(ref);
+
+    if(site.ok||biginOk){
+      if(!site.ok)console.warn('Website save failed, enquiry reached Bigin:',site.error);
+      setReference(ref);
+    }else{
+      setError(site.error);
+    }
+    setBusy(false);
   }
 
   return <section className="remix-section" id="story-remixer" aria-labelledby="remix-title">
