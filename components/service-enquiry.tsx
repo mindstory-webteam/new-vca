@@ -7,48 +7,147 @@ import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Checkbox} from '@/components/ui/checkbox';
 import {contact} from '@/lib/contact';
+import {
+  sendLeadToBigin,
+  createLeadId,
+  splitName,
+  orNull,
+  mapServicesToBigin,
+  mapBudgetToBigin,
+  parseBudgetAmount,
+  closingDateFromTiming,
+  readUtm,
+} from '@/lib/bigin-bridge';
+
+type EnquiryData={name:string;business:string;location:string;email:string;phone:string;requirement:string;budget:string};
 
 export function ServiceEnquiry({slug,name}:{slug:string;name:string}){
   const id=useId();
   const [submissionId,setSubmissionId]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[reference,setReference]=useState(''),[consent,setConsent]=useState(false);
   useEffect(()=>setSubmissionId(crypto.randomUUID()),[]);
 
-  async function submit(event:React.FormEvent<HTMLFormElement>){
-    event.preventDefault();
-    if(busy)return;
-    const form=new FormData(event.currentTarget);
-    if(!consent){setError('Please agree to share these details for your enquiry.');return}
-    setBusy(true);setError('');
+  /** 1. Save on the website (/api/briefs), like before. */
+  async function saveToSite(d:EnquiryData):Promise<{ok:true;reference:string}|{ok:false;error:string}>{
     try{
       const response=await fetch('/api/briefs',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           submissionId,
-          name:form.get('name'),
-          business:form.get('business'),
-          location:form.get('location'),
-          email:form.get('email'),
-          phone:form.get('phone')||'',
-          requirement:form.get('requirement'),
+          name:d.name,
+          business:d.business,
+          location:d.location,
+          email:d.email,
+          phone:d.phone,
+          requirement:d.requirement,
           industry:'other',
           goal:'other',
           services:[slug],
           timing:'Let’s discuss',
           links:'',
-          budget:form.get('budget')||'',
+          budget:d.budget,
           assessment:'',
           consent:true
         })
       });
-      const result=await response.json() as {saved?:boolean;reference?:string;error?:string};
-      if(!response.ok||!result.saved||!result.reference)throw new Error(result.error||'We could not save your enquiry. Please try again.');
-      setReference(result.reference);
-    }catch(e){
-      setError(e instanceof Error?e.message:'We could not save your enquiry. Your details are still here.');
-    }finally{
-      setBusy(false);
+      const result=await response.json().catch(()=>({})) as {saved?:boolean;reference?:string;error?:string};
+      if(!response.ok||!result.saved||!result.reference)return {ok:false,error:result.error||'We could not save your enquiry. Please try again.'};
+      return {ok:true,reference:result.reference};
+    }catch{
+      return {ok:false,error:'We could not save your enquiry. Your details are still here.'};
     }
+  }
+
+  /** 2. Send the same enquiry to Bigin. Extra fields go into Description as text. */
+  function sendToBigin(leadId:string,d:EnquiryData){
+    const {firstName,lastName}=splitName(d.name);
+    const utm=readUtm();
+    const pageUrl=window.location.href;
+
+    const description=[
+      'SERVICE PAGE ENQUIRY',
+      `Reference: ${leadId}`,
+      `Submitted: ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`,
+      `Service page: ${name} (/services/${slug})`,
+      '',
+      'REQUIREMENT',
+      orNull(d.requirement),
+      '',
+      'CONTACT',
+      `Name: ${orNull(d.name)}`,
+      `Email: ${orNull(d.email)}`,
+      `Phone: ${orNull(d.phone)}`,
+      '',
+      'BUSINESS',
+      `Business: ${orNull(d.business)}`,
+      `Town or neighbourhood: ${orNull(d.location)}`,
+      `Budget (as entered): ${orNull(d.budget)}`,
+      'Timing: Let’s discuss',
+      '',
+      'TRACKING',
+      `Page: ${pageUrl}`,
+      `UTM source: ${orNull(utm.source)}`,
+      `UTM medium: ${orNull(utm.medium)}`,
+      `UTM campaign: ${orNull(utm.campaign)}`,
+      `UTM content: ${orNull(utm.content)}`,
+      `UTM term: ${orNull(utm.term)}`,
+    ].join('\n');
+
+    const stageQuestions=[
+      `Website reference: ${leadId}`,
+      `Form: Service page – ${name}`,
+      `Business: ${orNull(d.business)}`,
+      `Location: ${orNull(d.location)}`,
+      `Service: ${name}`,
+      `Budget: ${orNull(d.budget)}`,
+      `Email: ${orNull(d.email)}`,
+      '',
+      'Requirement:',
+      orNull(d.requirement),
+    ].join('\n');
+
+    return sendLeadToBigin({
+      leadId,
+      leadName:`${d.business.trim()} – ${d.name.trim()} (${name})`,
+      firstName,
+      lastName,
+      mobile:d.phone,
+      companyName:d.business.trim()||d.name.trim(),
+      location:d.location,
+      amount:parseBudgetAmount(d.budget),
+      service:mapServicesToBigin([name,slug]),
+      budget:mapBudgetToBigin(d.budget),
+      closingDate:closingDateFromTiming('Let’s discuss'),
+      description,
+      stageQuestions,
+      consent,
+      leadPageUrl:pageUrl,
+      utmSource:utm.source,
+      utmCampaign:utm.campaign,
+      utmContent:utm.content,
+    });
+  }
+
+  async function submit(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(busy)return;
+    const form=new FormData(event.currentTarget);
+    if(!consent){setError('Please agree to share these details for your enquiry.');return}
+    const text=(k:string)=>String(form.get(k)??'').trim();
+    const data:EnquiryData={name:text('name'),business:text('business'),location:text('location'),email:text('email'),phone:text('phone'),requirement:text('requirement'),budget:text('budget')};
+    setBusy(true);setError('');
+
+    const site=await saveToSite(data);
+    const ref=site.ok?site.reference:createLeadId();
+    const biginOk=await sendToBigin(ref,data);
+
+    if(site.ok||biginOk){
+      if(!site.ok)console.warn('Website save failed, enquiry reached Bigin:',site.error);
+      setReference(ref);
+    }else{
+      setError(site.error);
+    }
+    setBusy(false);
   }
 
   return <section className="service-enquiry-section" id="service-enquiry">

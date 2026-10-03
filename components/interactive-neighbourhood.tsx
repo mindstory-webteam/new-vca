@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import {useEffect,useState} from 'react';
-import {ArrowUpRight,Check,CheckCircle,Copy,Loader2,MapPin,PawPrint,Sparkles} from 'lucide-react';
+import {useEffect,useRef,useState} from 'react';
+import {ArrowUpRight,Check,CheckCircle,Copy,Loader2,MapPin,PawPrint,RotateCcw,Sparkles} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Textarea} from '@/components/ui/textarea';
@@ -29,11 +29,28 @@ export function CaptionRemixer(){
   const [industry,setIndustry]=useState('food'),[tone,setTone]=useState('friendly'),[action,setAction]=useState('visit'),[business,setBusiness]=useState(''),[location,setLocation]=useState(''),[detail,setDetail]=useState(''),[budget,setBudget]=useState(''),[copied,setCopied]=useState(false),[copyError,setCopyError]=useState('');
   const [name,setName]=useState(''),[email,setEmail]=useState(''),[phone,setPhone]=useState(''),[consent,setConsent]=useState(false);
   const [submissionId,setSubmissionId]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[reference,setReference]=useState('');
+  const [refCopied,setRefCopied]=useState(false);
+  const thanksRef=useRef<HTMLDivElement>(null);
 
   const caption=buildLocalCaption({industry,tone,business,location,detail,action});
 
   useEffect(()=>{setCopied(false);setCopyError('')},[caption]);
   useEffect(()=>{setSubmissionId(crypto.randomUUID())},[]);
+
+  // Bring the thank-you card into view once the brief is saved
+  useEffect(()=>{
+    if(reference)thanksRef.current?.scrollIntoView({behavior:'smooth',block:'center'});
+  },[reference]);
+
+  async function copyReference(){
+    try{await navigator.clipboard.writeText(reference);setRefCopied(true);setTimeout(()=>setRefCopied(false),2000)}
+    catch{/* the reference stays visible to copy by hand */}
+  }
+
+  function startOver(){
+    setReference('');setRefCopied(false);setError('');setConsent(false);
+    setSubmissionId(crypto.randomUUID());
+  }
 
   async function copy(){
     try{await navigator.clipboard.writeText(caption);setCopied(true)}
@@ -231,11 +248,35 @@ export function CaptionRemixer(){
             </div>
           </div>
           {reference?
-            <div className="remix-success" role="status">
-              <CheckCircle size={34}/>
-              <h3>Your brief is saved.</h3>
-              <p>Keep this reference for your next conversation.</p>
-              <strong>{reference}</strong>
+            <div className="remix-thanks" role="status" aria-live="polite" ref={thanksRef}>
+              <div className="remix-thanks-head">
+                <span className="remix-thanks-icon"><CheckCircle size={28}/></span>
+                <div>
+                  <h3>Thank you{name.trim()?`, ${name.trim().split(/\s+/)[0]}`:''}!</h3>
+                  <p>Your brief is saved. Our team will look at your details and caption idea, then get back to you soon.</p>
+                </div>
+              </div>
+
+              <div className="remix-thanks-ref">
+                <div>
+                  <span>Your reference</span>
+                  <strong>{reference}</strong>
+                </div>
+                <button type="button" onClick={copyReference} aria-label="Copy reference">
+                  {refCopied?<Check size={16}/>:<Copy size={16}/>} {refCopied?'Copied':'Copy'}
+                </button>
+              </div>
+
+              <ol className="remix-thanks-steps">
+                <li><span>1</span>We read your brief and the caption you created.</li>
+                <li><span>2</span>We contact you at <b>{email.trim()||'your email'}</b>{phone.trim()?<> or <b>{phone.trim()}</b></>:null}.</li>
+                <li><span>3</span>We agree the next step together. No commitment until then.</li>
+              </ol>
+
+              <div className="remix-thanks-actions">
+                <Button asChild className="button purple"><Link href="/work">See our work <ArrowUpRight/></Link></Button>
+                <Button type="button" variant="outline" onClick={startOver}><RotateCcw size={16}/> Create another caption</Button>
+              </div>
             </div>
           :
             <div className="remix-actions">
@@ -248,5 +289,33 @@ export function CaptionRemixer(){
         </div>
       </form>
     </div>
+  
+
+    <style>{`
+      .remix-thanks{background:#fff;border:1px solid rgba(107,42,163,.18);border-radius:22px;padding:28px;margin-top:18px;box-shadow:0 18px 40px rgba(76,29,120,.12);animation:remixThanksIn .45s ease both}
+      .remix-thanks-head{display:flex;gap:16px;align-items:flex-start}
+      .remix-thanks-icon{flex:none;width:52px;height:52px;border-radius:16px;background:#e9f8f0;color:#1f9a62;display:grid;place-items:center}
+      .remix-thanks h3{font-size:clamp(22px,2.4vw,28px);line-height:1.15;margin:2px 0 6px;color:#1b1430}
+      .remix-thanks-head p{margin:0;color:#5c5470;font-size:15.5px;line-height:1.55}
+      .remix-thanks-ref{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 18px;padding:14px 16px;border:1.5px dashed #8b4fc4;border-radius:14px;background:#f6effc}
+      .remix-thanks-ref span{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6d5a85}
+      .remix-thanks-ref strong{display:block;font-size:20px;letter-spacing:.05em;color:#3d1466;word-break:break-all}
+      .remix-thanks-ref button{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(107,42,163,.3);background:#fff;color:#5b2391;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+      .remix-thanks-ref button:hover{background:#efe3fa}
+      .remix-thanks-ref button:focus-visible{outline:2px solid #6b2aa3;outline-offset:2px}
+      .remix-thanks-steps{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:10px}
+      .remix-thanks-steps li{display:flex;gap:12px;align-items:flex-start;color:#3b3450;font-size:15px;line-height:1.5}
+      .remix-thanks-steps li span{flex:none;width:24px;height:24px;border-radius:50%;background:#6b2aa3;color:#fff;font-size:12.5px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+      .remix-thanks-steps b{font-weight:600;color:#1b1430;word-break:break-all}
+      .remix-thanks-actions{display:flex;flex-wrap:wrap;gap:12px}
+      @keyframes remixThanksIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+      @media (prefers-reduced-motion:reduce){.remix-thanks{animation:none}}
+      @media (max-width:560px){
+        .remix-thanks{padding:22px 18px}
+        .remix-thanks-head{flex-direction:column;gap:12px}
+        .remix-thanks-ref{flex-direction:column;align-items:flex-start}
+        .remix-thanks-actions>*{width:100%;justify-content:center}
+      }
+    `}</style>
   </section>
 }
