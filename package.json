@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "test": "node tests/cat-puzzles.mjs && node tests/service-enquiries.mjs && node tests/cat-quest-controls.mjs"
