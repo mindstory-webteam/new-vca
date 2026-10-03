@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {ArrowDown,ArrowUpRight,ChevronLeft,ChevronRight,Glasses,MapPin,MoveHorizontal,Pause,Play,Sparkles,ScanEye,RotateCcw} from 'lucide-react';
 import {Button} from '@/components/ui/button';
-import {OriginalCatArt} from './cat-mascot';
+import {CursorCat,type CursorCatHandle} from './cursor-cat';
 import {bound,heroFrame,heroSlideProgress} from '@/lib/hero-motion';
 import {gsap,ScrollTrigger} from '@/lib/gsap';
 
@@ -16,6 +16,7 @@ const slides=[
 
 export function ParallaxHero(){
   const host=useRef<HTMLElement>(null),stage=useRef<HTMLDivElement>(null),world=useRef<HTMLDivElement>(null);
+  const catArt=useRef<CursorCatHandle>(null);
   const [active,setActive]=useState(0),[reduced,setReduced]=useState(false),[compact,setCompact]=useState(false),[vision,setVision]=useState(false),[reaction,setReaction]=useState('');
   const [fit,setFit]=useState(true);const reactionCount=useRef(0),timer=useRef<ReturnType<typeof setTimeout>|null>(null),gesture=useRef({x:0,y:0,down:false,moved:false});
   const pinned=!reduced&&!compact&&fit;
@@ -48,6 +49,8 @@ export function ParallaxHero(){
   function choose(index:number){const next=(index+slides.length)%slides.length;const root=host.current,view=stage.current;if(!pinned||!root||!view){setActive(next);manualTween.current?.kill();const value={p:heroSlideProgress(latest.current)};manualTween.current=gsap.to(value,{p:heroSlideProgress(next),duration:reduced?0:.85,ease:'power2.inOut',onUpdate:()=>pose(value.p)});return}const top=parseFloat(getComputedStyle(view).top)||0;gsap.to(window,{scrollTo:{y:window.scrollY+root.getBoundingClientRect().top-top+(root.offsetHeight-view.offsetHeight)*heroSlideProgress(next),autoKill:true},duration:.95,ease:'power2.inOut',overwrite:'auto'})}
   function resetPointer(){if(!world.current)return;pointerTween.current?.kill();pointerTween.current=gsap.to(world.current,{'--pointer-x':'0deg','--pointer-y':'0deg',duration:reduced?0:.65,ease:'power3.out'})}
   function playCat(action:'pounce'|'peek'|'wave'|'reset'){
+    // the video frames: wave → waving clip, pounce → laugh clip, peek → look around, reset → thinking pose
+    catArt.current?.play(action==='pounce'?'laugh':action);
     const layer=host.current?.querySelector('.cat-action-layer'),shadow=host.current?.querySelector('.cat-contact-shadow');if(!layer)return;
     catAction.current?.kill();gsap.set(layer,{x:0,y:0,rotation:0,rotationY:0,scale:1,scaleX:1,scaleY:1,transformOrigin:'50% 85%'});if(shadow)gsap.set(shadow,{scale:1,opacity:.65});
     if(action==='reset'){resetPointer();setVision(false);setReaction('Ready for a little curiosity.');}
@@ -74,9 +77,9 @@ export function ParallaxHero(){
         <div ref={world} className={'hero-world mascot-original-on '+(vision?'cat-vision-on ':'')+(reaction?'cat-reacting':'')} onPointerMove={event=>{const g=gesture.current;if(g.down&&Math.hypot(event.clientX-g.x,event.clientY-g.y)>10)g.moved=true;}} onPointerLeave={resetPointer} onPointerDown={event=>{gesture.current={x:event.clientX,y:event.clientY,down:true,moved:false}}} onPointerUp={event=>{const g=gesture.current;g.down=false;const dx=event.clientX-g.x,dy=event.clientY-g.y;if(event.pointerType!=='mouse'&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)choose(active+(dx<0?1:-1))}} onPointerCancel={()=>{gesture.current.down=false;resetPointer()}}>
           <div className="hero-open-scene">
 
-            <span className="cat-interaction-hint"><MoveHorizontal size={16}/> A familiar face. A little curiosity.</span>
+            <span className="cat-interaction-hint"><MoveHorizontal size={16}/> Move your cursor. The Cat is watching.</span>
             <div className="cat-perspective"><div className="cat-depth-position"><div className="cat-arrival"><div className="cat-action-layer"><div className="cat-logo-sculpture">
-              <button className="cat-art-front" onClick={event=>{if(event.detail===0)gesture.current.moved=false;react()}} aria-label="Play with the original Viral Cat mascot"><OriginalCatArt/></button>
+              <button className="cat-art-front" onClick={event=>{if(event.detail===0)gesture.current.moved=false;react()}} aria-label="Play with the Viral Cat mascot"><CursorCat ref={catArt}/></button>
             </div></div></div></div><div className="cat-contact-shadow" aria-hidden="true"/></div>
 
             <Link key={slide.tag} className="hero-service-float" href={'/services/'+slide.service}><span className="float-icon">{active===1?<Sparkles size={22}/>:<MapPin size={22}/>}</span><span><small>{slide.tag}</small><strong>{slide.note}</strong></span><ArrowUpRight size={18}/></Link>
@@ -89,5 +92,34 @@ export function ParallaxHero(){
       <div className="hero-navigation container"><div className="hero-slide-selector" aria-label="Choose an introduction slide">{slides.map((s,i)=><Button key={s.label} variant="ghost" aria-pressed={i===active} onClick={()=>choose(i)} className={active===i?'is-active':''}><strong>{s.label}</strong></Button>)}</div><div className="hero-slider-actions"><Button size="icon" variant="outline" onClick={()=>choose(active-1)} aria-label="Previous hero slide"><ChevronLeft/></Button><Button size="icon" variant="outline" onClick={()=>choose(active+1)} aria-label="Next hero slide"><ChevronRight/></Button><Button size="icon" variant="ghost" onClick={toggleMotion} aria-label={reduced?'Enable animation':'Reduce animation'} aria-pressed={reduced}>{reduced?<Play size={17}/>:<Pause size={17}/>}</Button></div><a href="#neighbourhood" className="hero-scroll-down"><span>{pinned?'Scroll to explore':'Explore the neighbourhood'}</span><ArrowDown size={18}/></a></div>
       <div className="hero-reading-progress" aria-hidden="true"/>
     </div>
+    {/* Cursor-following cat: centred and large in the right-hand column */}
+    <style>{`
+      /* the right column becomes a centred stage */
+      #follow-the-cat .hero-world{position:relative}
+      #follow-the-cat .hero-world .hero-open-scene{position:relative;display:flex!important;align-items:center;justify-content:center}
+      /* old SVG-cat wrappers: no fixed size or offsets, centred in the column */
+      #follow-the-cat .hero-world .cat-perspective,
+      #follow-the-cat .hero-world .cat-depth-position{
+        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+        width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;
+        margin:0 auto!important;display:flex!important;justify-content:center!important;align-items:center!important;translate:none!important}
+      #follow-the-cat .hero-world .cat-depth-position{transform:none!important}
+      #follow-the-cat .hero-world .cat-arrival,
+      #follow-the-cat .hero-world .cat-action-layer,
+      #follow-the-cat .hero-world .cat-logo-sculpture{
+        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;
+        width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;
+        margin:0 auto!important;display:flex!important;justify-content:center!important}
+      /* the cat itself: fills the column, never wider than it */
+      #follow-the-cat .hero-world .cat-art-front{
+        /* change the 760px to make the cat bigger or smaller */
+        width:min(100%,760px)!important;max-width:100%!important;height:auto!important;max-height:none!important;
+        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;
+        display:block!important;margin:0 auto!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+      #follow-the-cat .hero-world .cat-art-front .cursor-cat,
+      #follow-the-cat .hero-world .cat-art-front canvas{width:100%!important;height:auto!important;max-width:none!important}
+      #follow-the-cat .hero-world .cat-contact-shadow{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(60%,460px)!important}
+      @media (max-width:760px){#follow-the-cat .hero-world .cat-art-front{width:min(100%,520px)!important}}
+    `}</style>
   </section>;
 }
