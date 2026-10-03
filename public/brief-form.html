@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Send your brief – Viral Cat</title>
+<style>
+/* =========================================================
+   Viral Cat – Brief form (plain HTML / CSS / JS)
+   Change these tokens to match your site.
+   ========================================================= */
+:root{
+  --purple:#6b3fe0;
+  --purple-dark:#5128c4;
+  --purple-soft:#f3effd;
+  --ink:#1b1724;
+  --muted:#5f5a6b;
+  --line:#dcd7e5;
+  --error:#c9302c;
+  --ok:#1f9a62;
+  --radius:16px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:transparent;color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{padding:4px}
+[hidden]{display:none!important}
+a{color:var(--purple)}
+svg{flex:none}
+
+/* Layout */
+.brief-layout{display:grid;grid-template-columns:290px 1fr;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.brief-aside{background:var(--ink);color:#fff;padding:36px 30px;display:flex;flex-direction:column;gap:18px}
+.icon-tile{width:50px;height:50px;border-radius:14px;background:var(--purple);display:grid;place-items:center}
+.icon-tile svg{width:24px;height:24px}
+.brief-aside h2{font-size:32px;line-height:1.08;letter-spacing:-.01em}
+.brief-aside p{color:#cdc7d8}
+.steps{list-style:none;display:grid;gap:14px;margin-top:6px}
+.steps li{display:flex;align-items:center;gap:12px;color:#9d96ab;font-weight:600}
+.steps li span{width:32px;height:32px;border-radius:50%;border:1.5px solid #4f4860;display:grid;place-items:center;font-size:14px;flex:none}
+.steps li span svg{width:16px;height:16px}
+.steps li.active{color:#fff}
+.steps li.active span{background:var(--purple);border-color:var(--purple)}
+.steps li.completed{color:#e2ddeb}
+.steps li.completed span{background:var(--ok);border-color:var(--ok)}
+.aside-note{margin-top:auto;font-size:13px;color:#9d96ab}
+
+.brief-form{padding:36px 40px 40px;min-width:0}
+.brief-form h2{font-size:27px;line-height:1.2;margin-bottom:24px;letter-spacing:-.01em}
+
+/* Fields */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;border:0;min-width:0}
+.field>label,.field>legend{font-weight:600;font-size:14.5px}
+.field>label span,.field>legend span{font-weight:400;color:var(--muted)}
+.field>legend{margin-bottom:6px}
+input[type=text],input[type=email],input[type=tel],select,textarea{
+  width:100%;font:inherit;font-size:15px;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:10px;padding:11px 14px;min-height:46px;
+}
+select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%235f5a6b' stroke-width='2'/></svg>");
+  background-repeat:no-repeat;background-position:right 15px center}
+textarea{resize:vertical;min-height:130px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(107,63,224,.18)}
+input:user-invalid,textarea:user-invalid{border-color:var(--error)}
+.field small{color:var(--muted);font-size:12.5px}
+
+.service-checkboxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.check{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14.5px;font-weight:500}
+.check:has(input:checked){border-color:var(--purple);background:var(--purple-soft)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--purple);cursor:pointer;flex:none}
+input[type=checkbox]:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+
+/* Buttons */
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:700;font-size:15px;border-radius:999px;padding:12px 24px;border:0;cursor:pointer;text-decoration:none;transition:background-color .15s}
+.button svg{width:18px;height:18px}
+.button.purple{background:var(--purple);color:#fff}
+.button.purple:hover:not(:disabled){background:var(--purple-dark)}
+.button.ghost{background:transparent;color:var(--ink)}
+.button.ghost:hover:not(:disabled){background:var(--purple-soft)}
+.button.sm{padding:6px 12px;font-size:13.5px}
+.button:disabled{opacity:.5;cursor:not-allowed}
+.button:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+.tool-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+
+.attached-assessment{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:var(--purple-soft);margin-bottom:18px;font-size:14.5px}
+.attached-assessment svg{color:var(--ok);width:18px;height:18px}
+.attached-assessment span{flex:1}
+
+/* Review */
+.brief-review{border:1px solid var(--line);border-radius:12px;margin-bottom:22px}
+.brief-review>div{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:13px 16px;border-top:1px solid var(--line)}
+.brief-review>div:first-child{border-top:0}
+.brief-review dt{font-weight:600;color:var(--muted);font-size:14px}
+.brief-review dd{word-break:break-word}
+.brief-review dd small{display:block;color:var(--muted)}
+.preserve-lines{white-space:pre-wrap}
+.small-note{font-size:13.5px;color:var(--muted)}
+
+.consent{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;margin-bottom:16px;cursor:pointer}
+.consent input{margin-top:3px}
+.error-message{color:var(--error);font-size:14.5px;font-weight:600;margin-bottom:14px}
+
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+/* Success */
+.brief-success{text-align:center;padding:56px 28px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;gap:14px}
+.brief-success>svg{width:54px;height:54px;color:var(--ok)}
+.brief-success h2{font-size:28px}
+.brief-success p{max-width:520px}
+.reference{border:1px dashed var(--purple);border-radius:12px;padding:14px 26px;background:var(--purple-soft);display:flex;flex-direction:column;gap:2px}
+.reference span{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.reference strong{font-size:22px;letter-spacing:.04em}
+
+@media (max-width:860px){
+  .brief-layout{grid-template-columns:1fr}
+  .brief-aside{padding:28px 24px}
+  .brief-aside h2 br{display:none}
+  .steps{grid-template-columns:repeat(3,auto);justify-content:start;gap:16px}
+  .aside-note{margin-top:0}
+  .brief-form{padding:28px 22px 32px}
+}
+@media (max-width:560px){
+  .form-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .brief-review>div{grid-template-columns:1fr;gap:2px}
+  .tool-nav .button.purple{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== FORM ===================== -->
+<div class="brief-layout" id="briefLayout">
+  <aside class="brief-aside">
+    <span class="icon-tile" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>
+    </span>
+    <h2>Tell us<br>your story.</h2>
+    <p>A few useful details help us understand where to start.</p>
+    <ol class="steps" id="stepList"></ol>
+    <div class="aside-note">Your details are only saved when you send this brief.</div>
+  </aside>
+
+  <div class="brief-form">
+
+    <!-- STEP 1 -->
+    <form id="step0" novalidate>
+      <h2>First, the essentials.</h2>
+      <div class="form-grid">
+        <div class="field"><label for="business">Business name *</label><input id="business" data-field="business" type="text" autocomplete="organization" required minlength="2" maxlength="150" placeholder="What’s your business called?"></div>
+        <div class="field"><label for="location">Town or neighbourhood *</label><input id="location" data-field="location" type="text" required minlength="2" maxlength="150" placeholder="Where are you based?"></div>
+        <div class="field"><label for="budget">Monthly budget <span>(optional)</span></label><input id="budget" data-field="budget" type="text" list="budget-options" maxlength="60" placeholder="Choose a range or type your own"><datalist id="budget-options"></datalist></div>
+        <div class="field"><label for="name">Your name *</label><input id="name" data-field="name" type="text" autocomplete="name" required minlength="2" maxlength="120" placeholder="What should we call you?"></div>
+        <div class="field"><label for="email">Email address *</label><input id="email" data-field="email" type="email" autocomplete="email" required maxlength="200" placeholder="you@yourbusiness.com"></div>
+        <div class="field"><label for="phone">Phone number <span>(optional)</span></label><input id="phone" data-field="phone" type="tel" autocomplete="tel" maxlength="30" pattern="[0-9\+\(\)\.\-\s]*" placeholder="Include your country code"></div>
+      </div>
+      <p class="error-message" role="alert" data-error hidden></p>
+      <button type="submit" class="button purple">Tell us what you need <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </form>
+
+    <!-- STEP 2 -->
+    <form id="step1" novalidate hidden>
+      <h2>What’s next for your business?</h2>
+      <div class="field"><label for="goal">Your main priority</label><select id="goal" data-field="goal"></select></div>
+      <fieldset class="field"><legend>Services you’re curious about <span>(optional)</span></legend><div class="service-checkboxes" id="serviceList"></div></fieldset>
+      <div class="field"><label for="requirement">Tell us a little more *</label><textarea id="requirement" data-field="requirement" rows="5" required minlength="10" maxlength="4000" placeholder="What do you want to work on? What should we know about your business?"></textarea><small>At least 10 characters. Include any selected idea you want to explore.</small></div>
+      <div class="form-grid">
+        <div class="field"><label for="timing">When are you thinking?</label><select id="timing" data-field="timing"></select></div>
+        <div class="field"><label for="links">Website or social links <span>(optional)</span></label><input id="links" data-field="links" type="text" maxlength="1000" placeholder="Your website or social profile"></div>
+      </div>
+      <div class="attached-assessment" id="assessmentBox" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+        <span>Your presence check answers are included.</span>
+        <button type="button" class="button ghost sm" id="removeAssessment">Remove</button>
+      </div>
+      <p class="error-message" role="alert" data-error hidden></p>
+      <div class="tool-nav">
+        <button type="button" class="button ghost" data-goto="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
+        <button type="submit" class="button purple">Review my brief <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      </div>
+    </form>
+
+    <!-- STEP 3 -->
+    <div id="step2" hidden>
+      <h2>One last look.</h2>
+      <dl class="brief-review" id="review"></dl>
+      <label class="consent"><input type="checkbox" id="consent"><span>I agree to share these details so Viral Cat can review and respond to my enquiry. <a href="/privacy" target="_blank" rel="noopener">Privacy information</a></span></label>
+      <p class="error-message" role="alert" id="submitError" hidden></p>
+      <div class="tool-nav">
+        <button type="button" class="button ghost" data-goto="1" id="editBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Edit details</button>
+        <button type="button" class="button purple" id="sendBtn" disabled>
+          <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg id="busyIcon" class="spin" hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+          <span id="sendLabel">Send my brief</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== SUCCESS ===================== -->
+<div class="brief-success" id="success" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+  <h2>Your brief is saved.</h2>
+  <p id="successThanks">Thanks. Your business details and requirements have been recorded.</p>
+  <div class="reference"><span>YOUR REFERENCE</span><strong id="successRef"></strong></div>
+  <p class="small-note">Your brief is ready for review. Service availability, timing and the next conversation still need to be confirmed.</p>
+  <div class="button-row"><a class="button purple" href="/learn" target="_top">Explore local knowledge</a></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================
+     1. SETTINGS
+     ===================================================== */
+
+  // Bigin web form (values copied from your Bigin form code).
+  // Check the action URL: open the original Bigin form in a browser,
+  // inspect the <form> tag after it loads and copy its "action" here
+  // if it is different (e.g. bigin.zoho.in for an India data centre).
+  var BIGIN = {
+    action: 'https://bigin.zoho.com/crm/WebToRecordForm',
+    xnQsjsdp: '43130f9502c3eab3785bf4603eb9034bca0897051fa16c7a11f4f6cd431de6e1',
+    xmIwtLD: '6388d2eeba70e0251d514fe44dc570be64e82eab60b6e0bd6581092e616bd308b0c4c2cc7703099179179a00ded6df25',
+    actionType: 'UG90ZW50aWFscw==',
+    pipeline: 'Sales Pipeline Standard 1',
+    stage: 'Qualification',
+    leadSource: 'Official Website',
+    leadQuality: 'Not Assessed'
+  };
+
+  // Also save the brief on your website (/api/briefs), like before.
+  // Set to false if you only want Bigin.
+  var SAVE_TO_SITE = true;
+  var SITE_ENDPOINT = '/api/briefs';
+
+  var TIMINGS = ['Let’s discuss', 'As soon as possible', 'Within a month', 'In the next 2–3 months', 'Just exploring'];
+  var BUDGET_OPTIONS = ['Below ₹25K/month', '₹25K–₹50K/month', '₹50K–₹1L/month', '₹1L–₹3L/month', '₹3L+/month', 'Let’s discuss'];
+
+  // Options that exist in Bigin
+  var BIGIN_SERVICES = ['Digital Marketing', 'SEO', 'Website Development', 'Video Production', 'Influencer Marketing', 'AI Videos'];
+  var BIGIN_BUDGETS = ['Below ₹25K', '₹25K–₹50K', '₹50K–₹1L', '₹1L–₹3L', '₹3L+'];
+
+  // Used only when the page is opened on its own (not inside the contact page)
+  var FALLBACK_LISTS = {
+    services: BIGIN_SERVICES.map(function (n) { return { slug: slugify(n), name: n }; }),
+    industries: [{ id: 'food', name: 'Food & drink' }],
+    goals: [{ id: 'visits', name: 'Bring more people through the door' }]
+  };
+
+  /* =====================================================
+     2. STATE
+     ===================================================== */
+  var state = {
+    step: 0,
+    busy: false,
+    configured: false,
+    submissionId: makeUUID(),
+    lists: { services: [], industries: [], goals: [] },
+    query: {},
+    pageUrl: '',
+    data: {
+      business: '', name: '', email: '', phone: '', location: '',
+      industry: 'food', goal: 'visits', services: [], requirement: '',
+      timing: 'Let’s discuss', links: '', budget: '', assessment: '', consent: false
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var inFrame = window.parent !== window;
+
+  /* =====================================================
+     3. MESSAGES WITH THE CONTACT PAGE
+     ===================================================== */
+  function post(msg) {
+    if (inFrame) window.parent.postMessage(msg, window.location.origin);
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin || e.source !== window.parent) return;
+    var m = e.data;
+    if (m && m.type === 'vc-brief:config') applyConfig(m);
+  });
+
+  function cleanList(list, key) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (x) { return x && typeof x[key] === 'string' && typeof x.name === 'string'; });
+  }
+
+  function ownQuery() {
+    var q = {};
+    new URLSearchParams(window.location.search).forEach(function (v, k) { q[k] = v; });
+    return q;
+  }
+
+  function applyConfig(cfg) {
+    if (state.configured) return;
+    state.configured = true;
+
+    state.lists = {
+      services: cleanList(cfg.services, 'slug'),
+      industries: cleanList(cfg.industries, 'id'),
+      goals: cleanList(cfg.goals, 'id')
+    };
+    state.query = cfg.query && typeof cfg.query === 'object' ? cfg.query : {};
+    state.pageUrl = typeof cfg.pageUrl === 'string' ? cfg.pageUrl : window.location.href;
+
+    // Same prefill rules as the old React form
+    var q = state.query, d = state.data, L = state.lists;
+    d.industry = L.industries.some(function (i) { return i.id === q.industry; }) ? q.industry : 'food';
+    d.goal = L.goals.some(function (g) { return g.id === q.goal; }) ? q.goal : 'visits';
+    d.location = String(q.location || '').slice(0, 150);
+    d.services = String(q.services || '').split(',').filter(function (s) {
+      return L.services.some(function (v) { return v.slug === s; });
+    });
+    d.requirement = String(q.idea || '').slice(0, 4000);
+    d.assessment = String(q.assessment || '').slice(0, 4000);
+
+    renderGoals();
+    renderServices();
+    syncInputs();
+    renderAssessment();
+  }
+
+  // Ask the contact page for the lists; fall back after ~3 seconds.
+  if (inFrame) {
+    var tries = 0;
+    var timer = setInterval(function () {
+      if (state.configured) return clearInterval(timer);
+      if (++tries > 12) {
+        clearInterval(timer);
+        applyConfig({ services: FALLBACK_LISTS.services, industries: FALLBACK_LISTS.industries, goals: FALLBACK_LISTS.goals, query: ownQuery(), pageUrl: document.referrer || window.location.href });
+        return;
+      }
+      post({ type: 'vc-brief:ready' });
+    }, 250);
+    post({ type: 'vc-brief:ready' });
+  } else {
+    applyConfig({ services: FALLBACK_LISTS.services, industries: FALLBACK_LISTS.industries, goals: FALLBACK_LISTS.goals, query: ownQuery(), pageUrl: window.location.href });
+  }
+
+  // Tell the contact page how tall the form is
+  function reportHeight() {
+    post({ type: 'vc-brief:height', height: Math.ceil(document.body.getBoundingClientRect().height) });
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(reportHeight).observe(document.body);
+  window.addEventListener('load', reportHeight);
+
+  /* =====================================================
+     4. RENDERING
+     ===================================================== */
+  var ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+  function renderSteps() {
+    var list = $('stepList');
+    list.innerHTML = '';
+    ['Your business', 'Your requirement', 'Review & send'].forEach(function (label, i) {
+      var li = document.createElement('li');
+      if (state.step === i) li.className = 'active';
+      else if (state.step > i) li.className = 'completed';
+      var span = document.createElement('span');
+      if (state.step > i) span.innerHTML = ICON_CHECK; else span.textContent = String(i + 1);
+      li.appendChild(span);
+      li.appendChild(document.createTextNode(label));
+      list.appendChild(li);
+    });
+  }
+
+  function renderGoals() {
+    var sel = $('goal');
+    sel.innerHTML = '';
+    state.lists.goals.forEach(function (g) { sel.add(new Option(g.name, g.id)); });
+    sel.add(new Option('Something else', 'other'));
+    sel.value = state.data.goal;
+    if (sel.value !== state.data.goal) state.data.goal = sel.value;
+  }
+
+  function renderServices() {
+    var box = $('serviceList');
+    box.innerHTML = '';
+    state.lists.services.forEach(function (s) {
+      var label = document.createElement('label');
+      label.className = 'check';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = s.slug;
+      cb.checked = state.data.services.indexOf(s.slug) > -1;
+      cb.addEventListener('change', function () {
+        var list = state.data.services.filter(function (x) { return x !== s.slug; });
+        if (cb.checked) list.push(s.slug);
+        state.data.services = list;
+        clearErrors();
+      });
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(s.name));
+      box.appendChild(label);
+    });
+  }
+
+  function renderAssessment() {
+    $('assessmentBox').hidden = !state.data.assessment;
+  }
+
+  function syncInputs() {
+    document.querySelectorAll('[data-field]').forEach(function (el) {
+      var k = el.getAttribute('data-field');
+      if (k in state.data && typeof state.data[k] === 'string') el.value = state.data[k];
+    });
+  }
+
+  function addRow(dl, term, value, small, extraClass) {
+    var row = document.createElement('div');
+    var dt = document.createElement('dt'); dt.textContent = term;
+    var dd = document.createElement('dd'); dd.textContent = value;
+    if (extraClass) dd.className = extraClass;
+    if (small) { var s = document.createElement('small'); s.textContent = small; dd.appendChild(s); }
+    row.appendChild(dt); row.appendChild(dd); dl.appendChild(row);
+  }
+
+  function renderReview() {
+    var d = state.data, dl = $('review');
+    dl.innerHTML = '';
+    addRow(dl, 'Business', d.business, d.location);
+    addRow(dl, 'Contact', d.name, d.email + (d.phone ? ' · ' + d.phone : ''));
+    addRow(dl, 'Priority', goalName());
+    addRow(dl, 'Services', serviceNames().join(', ') || 'Help me decide');
+    addRow(dl, 'Your requirement', d.requirement, '', 'preserve-lines');
+    addRow(dl, 'Timing', d.timing);
+    if (d.budget) addRow(dl, 'Budget', d.budget);
+    if (d.links) addRow(dl, 'Your links', d.links);
+    if (d.assessment) addRow(dl, 'Presence check', d.assessment, '', 'preserve-lines small-note');
+  }
+
+  function renderSendButton() {
+    var b = $('sendBtn');
+    b.disabled = state.busy || !state.data.consent;
+    $('sendIcon').hidden = state.busy;
+    $('busyIcon').hidden = !state.busy;
+    $('sendLabel').textContent = state.busy ? 'Saving your brief…' : 'Send my brief';
+    $('editBtn').disabled = state.busy;
+  }
+
+  function goTo(step) {
+    state.step = step;
+    $('step0').hidden = step !== 0;
+    $('step1').hidden = step !== 1;
+    $('step2').hidden = step !== 2;
+    if (step === 2) renderReview();
+    renderSteps();
+    clearErrors();
+    window.scrollTo(0, 0);
+    post({ type: 'vc-brief:scroll' });
+  }
+
+  function showError(form, msg) {
+    var el = form.querySelector('[data-error]');
+    if (el) { el.textContent = msg; el.hidden = false; }
+  }
+  function clearErrors() {
+    document.querySelectorAll('[data-error]').forEach(function (el) { el.hidden = true; el.textContent = ''; });
+    $('submitError').hidden = true;
+  }
+
+  /* =====================================================
+     5. EVENTS
+     ===================================================== */
+  document.querySelectorAll('[data-field]').forEach(function (el) {
+    var k = el.getAttribute('data-field');
+    var evt = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(evt, function () { state.data[k] = el.value; clearErrors(); });
+  });
+
+  function validateStep(form) {
+    if (form.checkValidity()) return true;
+    var bad = form.querySelector(':invalid');
+    var label = bad && form.querySelector('label[for="' + bad.id + '"]');
+    var name = label ? label.textContent.replace('*', '').replace('(optional)', '').trim() : 'this field';
+    var msg = 'Please check ' + name + '.';
+    if (bad && bad.validity.valueMissing) msg = name + ' is required.';
+    else if (bad && bad.validity.tooShort) msg = name + ' needs at least ' + bad.minLength + ' characters.';
+    else if (bad && bad.validity.typeMismatch) msg = 'Enter a valid ' + name.toLowerCase() + '.';
+    else if (bad && bad.validity.patternMismatch) msg = 'Use only numbers, spaces and + ( ) . - in ' + name.toLowerCase() + '.';
+    showError(form, msg);
+    if (bad) bad.focus();
+    return false;
+  }
+
+  // Native minlength is not checked on pre-filled values, so check it here too
+  function checkMinLengths(form) {
+    var fields = form.querySelectorAll('[minlength]');
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if (f.value.trim().length < f.minLength) {
+        var label = form.querySelector('label[for="' + f.id + '"]');
+        var name = label ? label.textContent.replace('*', '').trim() : 'This field';
+        showError(form, name + ' needs at least ' + f.minLength + ' characters.');
+        f.focus();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  $('step0').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (validateStep(this) && checkMinLengths(this)) goTo(1);
+  });
+  $('step1').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (validateStep(this) && checkMinLengths(this)) goTo(2);
+  });
+  document.querySelectorAll('[data-goto]').forEach(function (b) {
+    b.addEventListener('click', function () { if (!state.busy) goTo(Number(b.getAttribute('data-goto'))); });
+  });
+  $('removeAssessment').addEventListener('click', function () { state.data.assessment = ''; renderAssessment(); });
+  $('consent').addEventListener('change', function () { state.data.consent = this.checked; clearErrors(); renderSendButton(); });
+  $('sendBtn').addEventListener('click', submit);
+
+  /* =====================================================
+     6. HELPERS
+     ===================================================== */
+  function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  function orNull(v) { var t = String(v == null ? '' : v).trim(); return t || 'null'; }
+  function cut(v, max) { return String(v == null ? '' : v).slice(0, max); }
+
+  function makeUUID() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+  }
+
+  function createLeadId() {
+    var d = new Date();
+    var ymd = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', out = '';
+    var rnd = new Uint8Array(5);
+    (window.crypto || {}).getRandomValues ? crypto.getRandomValues(rnd) : rnd.forEach(function (_, i) { rnd[i] = Math.random() * 256; });
+    rnd.forEach(function (n) { out += chars[n % chars.length]; });
+    return 'VC-' + ymd + '-' + out;
+  }
+
+  function serviceNames() {
+    return state.data.services.map(function (slug) {
+      var s = state.lists.services.find(function (x) { return x.slug === slug; });
+      return s ? s.name : '';
+    }).filter(Boolean);
+  }
+  function goalName() {
+    var g = state.lists.goals.find(function (x) { return x.id === state.data.goal; });
+    return g ? g.name : 'Something else';
+  }
+  function industryName() {
+    var i = state.lists.industries.find(function (x) { return x.id === state.data.industry; });
+    return i ? i.name : state.data.industry;
+  }
+
+  function splitName(full) {
+    var parts = String(full).trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return { firstName: '', lastName: 'null' };
+    if (parts.length === 1) return { firstName: '', lastName: parts[0] };
+    return { firstName: parts.slice(0, -1).join(' '), lastName: parts[parts.length - 1] };
+  }
+
+  // Bigin "Service Interested In?" takes one value: pick the best match
+  function mapServicesToBigin(names) {
+    var rules = [
+      [/\bseo\b|search/i, 'SEO'],
+      [/\bai\b|artificial/i, 'AI Videos'],
+      [/influenc|creator|collab/i, 'Influencer Marketing'],
+      [/web|site|landing/i, 'Website Development'],
+      [/video|reel|film|shoot|production|photo|content/i, 'Video Production'],
+      [/social|\bads?\b|campaign|marketing|digital|brand|media|local/i, 'Digital Marketing']
+    ];
+    for (var i = 0; i < names.length; i++) {
+      var exact = BIGIN_SERVICES.find(function (b) { return b.toLowerCase() === names[i].toLowerCase(); });
+      if (exact) return exact;
+    }
+    for (var j = 0; j < names.length; j++) {
+      for (var r = 0; r < rules.length; r++) if (rules[r][0].test(names[j])) return rules[r][1];
+    }
+    return '-None-';
+  }
+
+  function normBudget(s) {
+    return String(s).toLowerCase().replace(/\/\s*month/g, '').replace(/[-—]/g, '–').replace(/\s+/g, '');
+  }
+  function mapBudgetToBigin(budget) {
+    var n = normBudget(budget);
+    var hit = BIGIN_BUDGETS.find(function (b) { return normBudget(b) === n; });
+    return hit || '-None-';
+  }
+
+  // "₹25K–₹50K/month" -> 50000, "₹3L+" -> 300000, "40,000" -> 40000
+  function parseBudgetAmount(budget) {
+    var text = String(budget).replace(/,/g, '');
+    var re = /(\d+(?:\.\d+)?)\s*(k|lakhs?|lacs?|l|cr|crore)?/gi, m, best = 0;
+    while ((m = re.exec(text))) {
+      var v = parseFloat(m[1]), u = (m[2] || '').toLowerCase();
+      if (u === 'k') v *= 1e3;
+      else if (u.charAt(0) === 'l') v *= 1e5;
+      else if (u.indexOf('cr') === 0) v *= 1e7;
+      if (v > best) best = v;
+    }
+    return best > 0 ? String(Math.round(best)).slice(0, 16) : '';
+  }
+
+  // Bigin "Closing Date" is required: estimate it from the timing answer
+  function closingDateFromTiming(timing) {
+    var days = { 'As soon as possible': 7, 'Within a month': 30, 'In the next 2–3 months': 90, 'Just exploring': 180 }[timing] || 30;
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('en-CA'); // YYYY-MM-DD, same as the Bigin form script sends
+  }
+
+  /* =====================================================
+     7. SUBMIT
+     ===================================================== */
+  async function saveToSite() {
+    if (!SAVE_TO_SITE) return { ok: false, error: 'Website saving is turned off.' };
+    try {
+      var payload = Object.assign({}, state.data, { submissionId: state.submissionId });
+      var res = await fetch(SITE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      var result = await res.json().catch(function () { return {}; });
+      if (!res.ok || !result.saved || !result.reference) return { ok: false, error: result.error || 'Could not save your brief.' };
+      return { ok: true, reference: result.reference };
+    } catch (e) {
+      return { ok: false, error: 'Could not save your brief. Please try again.' };
+    }
+  }
+
+  function buildDescription(leadId) {
+    var d = state.data, q = state.query;
+    // Every field that has no own column in Bigin goes in here as text
+    return [
+      'WEBSITE BRIEF',
+      'Reference: ' + leadId,
+      'Submitted: ' + new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      '',
+      'REQUIREMENT',
+      d.requirement.trim() || 'null',
+      '',
+      'CONTACT',
+      'Name: ' + orNull(d.name),
+      'Email: ' + orNull(d.email),
+      'Phone: ' + orNull(d.phone),
+      '',
+      'BUSINESS',
+      'Business: ' + orNull(d.business),
+      'Location: ' + orNull(d.location),
+      'Industry: ' + orNull(industryName()),
+      'Website / social links: ' + orNull(d.links),
+      '',
+      'PLAN',
+      'Main priority: ' + orNull(goalName()),
+      'Services selected: ' + (serviceNames().join(', ') || 'Help me decide'),
+      'Timing: ' + orNull(d.timing),
+      'Budget (as entered): ' + orNull(d.budget),
+      '',
+      'TRACKING',
+      'Page: ' + orNull(state.pageUrl),
+      'UTM source: ' + orNull(q.utm_source),
+      'UTM medium: ' + orNull(q.utm_medium),
+      'UTM campaign: ' + orNull(q.utm_campaign),
+      'UTM content: ' + orNull(q.utm_content),
+      'UTM term: ' + orNull(q.utm_term),
+      '',
+      'PRESENCE CHECK ANSWERS',
+      d.assessment.trim() || 'null'
+    ].join('\n').slice(0, 32000);
+  }
+
+  function buildStageQuestions(leadId) {
+    var d = state.data;
+    return [
+      'Website reference: ' + leadId,
+      'Business: ' + orNull(d.business),
+      'Location: ' + orNull(d.location),
+      'Industry: ' + orNull(industryName()),
+      'Main priority: ' + orNull(goalName()),
+      'Services: ' + (serviceNames().join(', ') || 'null'),
+      'Timing: ' + orNull(d.timing),
+      'Budget: ' + orNull(d.budget),
+      'Email: ' + orNull(d.email),
+      'Links: ' + orNull(d.links),
+      '',
+      'Presence check answers:',
+      d.assessment.trim() || 'null'
+    ].join('\n').slice(0, 32000);
+  }
+
+  async function sendToBigin(leadId) {
+    var d = state.data, q = state.query;
+    var names = splitName(d.name);
+    var fd = new FormData();
+    function add(k, v) { fd.append(k, v == null ? '' : String(v)); }
+
+    // Bigin's hidden "do not remove" fields
+    add('xnQsjsdp', BIGIN.xnQsjsdp);
+    add('zc_gad', '');
+    add('xmIwtLD', BIGIN.xmIwtLD);
+    add('actionType', BIGIN.actionType);
+    add('rmsg', 'true');
+    add('returnURL', 'null');
+
+    // Mapped fields
+    add('POTENTIALCF12', cut(leadId, 255));                                  // Lead ID
+    add('Potential Name', cut(d.business.trim() + ' – ' + d.name.trim(), 120)); // Lead Name *
+    add('Contacts.Last Name', cut(names.lastName, 80));                      // Last Name *
+    add('Contacts.First Name', cut(names.firstName, 40));                    // First Name
+    add('Contacts.Mobile', cut(orNull(d.phone), 30));                        // Mobile *
+    add('POTENTIALCF11', cut(d.location, 255));                              // Location
+    add('Accounts.Account Name', cut(d.business, 200));                      // Company Name *
+    add('Amount', parseBudgetAmount(d.budget));                              // Amount
+    add('POTENTIALCF1', mapServicesToBigin(serviceNames()));                 // Service Interested In?
+    add('POTENTIALCF3', mapBudgetToBigin(d.budget));                         // Monthly/Project Budget
+    add('Closing Date', closingDateFromTiming(d.timing));                    // Closing Date *
+    add('Contacts.Description', buildDescription(leadId));                   // Description (all extra fields)
+    add('Description', buildStageQuestions(leadId));                         // Stage Questions
+    if (d.consent) add('privacyTool', 'on');                                 // Consent checkbox
+    add('POTENTIALCF4', cut(state.pageUrl, 255));                            // Lead Page URL
+    add('POTENTIALCF5', cut(q.utm_source || '', 255));                       // UTM Source
+    add('POTENTIALCF7', cut(q.utm_campaign || '', 255));                     // UTM Campaign
+    add('POTENTIALCF6', cut(q.utm_content || '', 255));                      // UTM Content
+    add('POTENTIALCF10', BIGIN.leadQuality);                                 // Lead Quality *
+    add('Lead Source', BIGIN.leadSource);                                    // Lead Source *
+    add('Pipeline', BIGIN.pipeline);                                         // Sub-Pipeline *
+    add('Stage', BIGIN.stage);                                               // Stage *
+
+    try {
+      // Bigin does not allow reading the reply from another site, so this
+      // only confirms that the request reached Bigin.
+      await fetch(BIGIN.action, { method: 'POST', mode: 'no-cors', body: fd });
+      return true;
+    } catch (e) {
+      console.warn('Bigin submission failed', e);
+      return false;
+    }
+  }
+
+  async function submit() {
+    if (state.busy) return;
+    if (!state.data.consent) {
+      $('submitError').textContent = 'Please agree to share these details for your enquiry.';
+      $('submitError').hidden = false;
+      return;
+    }
+    state.busy = true; clearErrors(); renderSendButton();
+
+    var site = await saveToSite();
+    var ref = site.ok ? site.reference : createLeadId();
+    var biginOk = await sendToBigin(ref);
+
+    if (site.ok || biginOk) {
+      if (!site.ok && SAVE_TO_SITE) console.warn('Website save failed, brief reached Bigin:', site.error);
+      showSuccess(ref);
+    } else {
+      $('submitError').textContent = site.error || 'Could not send your brief. Please try again.';
+      $('submitError').hidden = false;
+    }
+    state.busy = false; renderSendButton();
+  }
+
+  function showSuccess(ref) {
+    var first = state.data.name.trim().split(/\s+/)[0] || '';
+    $('successThanks').textContent = 'Thanks' + (first ? ', ' + first : '') + '. Your business details and requirements have been recorded.';
+    $('successRef').textContent = ref;
+    $('briefLayout').hidden = true;
+    $('success').hidden = false;
+    window.scrollTo(0, 0);
+    post({ type: 'vc-brief:scroll' });
+  }
+
+  /* =====================================================
+     8. START
+     ===================================================== */
+  (function init() {
+    var t = $('timing');
+    TIMINGS.forEach(function (x) { t.add(new Option(x, x)); });
+    var dl = $('budget-options');
+    BUDGET_OPTIONS.forEach(function (b) { var o = document.createElement('option'); o.value = b; dl.appendChild(o); });
+    syncInputs();
+    renderSteps();
+    renderSendButton();
+  })();
+})();
+</script>
+</body>
+</html>
