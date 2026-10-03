@@ -1,11 +1,36 @@
 'use client';
 import {useState} from 'react';
 import Link from 'next/link';
-import {ArrowUpRight,Copy,Check} from 'lucide-react';
-import {industries} from '@/lib/content';
+import Image from 'next/image';
+import {ArrowUpRight} from 'lucide-react';
 import {workProjects} from '@/lib/work-projects';
 import {Button} from '@/components/ui/button';
-import {CatIcon} from '@/components/shared';
-import {Input} from '@/components/ui/input';
-export function WorkGallery(){const [filter,setFilter]=useState('all');const items=workProjects.filter(p=>filter==='all'||filter===p.id);return <><div className="portfolio-toolbar"><div className="filter-row" aria-label="Filter sample projects"><Button variant={filter==='all'?'default':'outline'} aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>All projects</Button>{industries.map(i=><Button key={i.id} variant={filter===i.id?'default':'outline'} aria-pressed={filter===i.id} onClick={()=>setFilter(i.id)}>{i.name}</Button>)}</div><p role="status">{items.length} {items.length===1?'sample project':'sample projects'}</p></div><div className="portfolio-grid">{items.map((p)=><Link className="portfolio-card" key={p.id} href={'/work/'+p.id}><div className={'portfolio-poster poster-'+p.color}><div><span>{p.brand.toUpperCase()}</span><span>SAMPLE / {p.category.toUpperCase()}</span></div><h2>{p.poster}</h2><div><span>A VIRAL CAT CREATIVE CONCEPT</span><ArrowUpRight size={28}/></div></div><div className="portfolio-card-caption"><div><p>{p.type}</p><h3>{p.title}</h3></div><span className="portfolio-link-icon"><ArrowUpRight size={23}/></span></div></Link>)}</div></>}
-export function ConceptPersonalizer({id}:{id:string}){const i=industries.find(x=>x.id===id)!;const [name,setName]=useState('Your business'),[copied,setCopied]=useState(false),[error,setError]=useState('');const copy=`${i.idea}\n\n${i.detail}\n\n${i.cta} — ${name||'Your business'}`;return <div className="personalizer"><label htmlFor="concept-name">Try it with your business name</label><Input id="concept-name" value={name} maxLength={100} onChange={e=>{setName(e.target.value);setCopied(false)}}/><div className="copy-preview"><span className="quiet-caption">Try this as a first draft</span><p>{copy}</p></div><div className="button-row"><Button variant="outline" onClick={async()=>{try{await navigator.clipboard.writeText(copy);setCopied(true)}catch{setError('Select the caption above to copy it.')}}}>{copied?<Check/>:<Copy/>}{copied?'Copied':'Copy caption'}</Button><Button asChild className="button purple"><Link href={'/contact?industry='+id+'&idea='+encodeURIComponent(copy)}>Take this idea further <ArrowUpRight/></Link></Button></div>{error&&<p role="status">{error}</p>}</div>}
+
+const categories=Array.from(new Set(workProjects.map(p=>p.category)));
+
+export function WorkGallery(){
+  const [filter,setFilter]=useState('all');
+  const items=workProjects.filter(p=>filter==='all'||filter===p.category);
+  return <>
+    <div className="portfolio-toolbar">
+      <div className="filter-row" role="group" aria-label="Filter projects">
+        <Button variant={filter==='all'?'default':'outline'} aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>All projects</Button>
+        {categories.map(c=><Button key={c} variant={filter===c?'default':'outline'} aria-pressed={filter===c} onClick={()=>setFilter(c)}>{c}</Button>)}
+      </div>
+      <p role="status">{items.length} {items.length===1?'project':'projects'}</p>
+    </div>
+    <div className="portfolio-grid">
+      {items.map((p,i)=>
+        <Link className="portfolio-card" key={p.id} href={'/work/'+p.id}>
+          <div className="portfolio-image">
+            <Image src={p.image} alt={p.imageAlt} fill sizes="(max-width: 768px) 100vw, 50vw" priority={i<2}/>
+          </div>
+          <div className="portfolio-card-caption">
+            <div><p>{p.businessType}</p><h3>{p.brand} — {p.title}</h3></div>
+            <span className="portfolio-link-icon"><ArrowUpRight size={23}/></span>
+          </div>
+        </Link>
+      )}
+    </div>
+  </>;
+}

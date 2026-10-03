@@ -1,9 +1,61 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {notFound} from 'next/navigation';
-import {ArrowUpRight,ArrowLeft} from 'lucide-react';
+import {ArrowUpRight,ArrowLeft,Check} from 'lucide-react';
 import {PageIntro} from '@/components/shared';
-import {ConceptPersonalizer} from '@/components/work-gallery';
 import {workProjects} from '@/lib/work-projects';
+
 export function generateStaticParams(){return workProjects.map(p=>({id:p.id}))}
-export async function generateMetadata({params}:{params:Promise<{id:string}>}){const {id}=await params;const p=workProjects.find(x=>x.id===id);return {title:p?`${p.brand} — Sample Creative Project`:'Project not found',description:p?.intro,alternates:{canonical:'/work/'+id}}}
-export default async function Page({params}:{params:Promise<{id:string}>}){const {id}=await params;const p=workProjects.find(x=>x.id===id);if(!p)notFound();const next=workProjects[(workProjects.indexOf(p)+1)%workProjects.length];return <><div className="container portfolio-back"><Link href="/work"><ArrowLeft size={17}/> All sample projects</Link><span>FICTIONAL BRAND / CREATIVE DEMONSTRATION</span></div><PageIntro eyebrow={p.brand.toUpperCase()+' / '+p.category.toUpperCase()} title={p.title} description={p.intro}/><section className="container case-study-hero"><div className={'portfolio-poster poster-'+p.color}><div><span>{p.brand.toUpperCase()}</span><span>SAMPLE CONCEPT</span></div><h2>{p.poster}</h2><div><span>VIRAL CAT / A CHAPTER OF MINDSTORY</span><ArrowUpRight size={28}/></div></div><div className="case-study-overview"><h2>A local idea,<br/><em>with a clear purpose.</em></h2><dl><div><dt>Business</dt><dd>{p.brand} · fictional</dd></div><div><dt>Focus</dt><dd>{p.type}</dd></div><div><dt>Our starting point</dt><dd>{p.insight}</dd></div></dl><Link className="text-link" href={'/services/'+p.service}>Explore the related service <ArrowUpRight size={18}/></Link></div></section><section className="container section case-study-story"><article><h2>What needs to change?</h2><p>{p.challenge}</p></article><article><h2>Give it a familiar feeling.</h2><p>{p.idea}</p></article></section><section className="case-study-deliverables"><div className="container preparation-grid"><div><h2>Every piece<br/><em>has a part to play.</em></h2><ul>{p.deliverables.map(d=><li key={d}>{d}</li>)}</ul></div><div><ol className="case-storyboard">{p.scenes.map((s,i)=><li key={s}><span>0{i+1}</span><p>{s}</p></li>)}</ol></div></div></section><section className="container section case-measurement"><h2>Look beyond the post.</h2><p>{p.measure}</p><small>Proposed evaluation only. This fictional concept has no reported campaign results.</small></section><section className="container content-area"><ConceptPersonalizer id={id}/></section><section className="container case-next"><div><h2>{next.brand}</h2></div><Link href={'/work/'+next.id} className="text-link">Explore the concept <ArrowUpRight/></Link></section></>}
+
+export async function generateMetadata({params}:{params:Promise<{id:string}>}){
+  const {id}=await params;
+  const p=workProjects.find(x=>x.id===id);
+  return {
+    title:p?`${p.brand} — Client Work`:'Project not found',
+    description:p?.impact,
+    alternates:{canonical:'/work/'+id},
+    openGraph:p?{images:[p.image]}:undefined
+  };
+}
+
+export default async function Page({params}:{params:Promise<{id:string}>}){
+  const {id}=await params;
+  const p=workProjects.find(x=>x.id===id);
+  if(!p)notFound();
+  const next=workProjects[(workProjects.indexOf(p)+1)%workProjects.length];
+  return <>
+    <div className="container portfolio-back">
+      <Link href="/work"><ArrowLeft size={17}/> All projects</Link>
+      <span>CLIENT WORK / {p.businessType.toUpperCase()}</span>
+    </div>
+    <PageIntro eyebrow={p.brand.toUpperCase()} title={p.title} description={p.focus}/>
+    <section className="container case-study-hero">
+      <div className="portfolio-image portfolio-image-lg">
+        <Image src={p.image} alt={p.imageAlt} fill sizes="(max-width: 768px) 100vw, 50vw" priority/>
+      </div>
+      <div className="case-study-overview">
+        <h2>Our starting point,<br/><em>and where it led.</em></h2>
+        <dl>
+          <div><dt>Business type</dt><dd>{p.businessType}</dd></div>
+          <div><dt>Focus</dt><dd>{p.focus}</dd></div>
+          <div><dt>Our starting point</dt><dd>{p.start}</dd></div>
+        </dl>
+        <Link className="text-link" href={'/services/'+p.service}>Explore the related service <ArrowUpRight size={18}/></Link>
+      </div>
+    </section>
+    <section className="container section case-study-story">
+      <article><h2>Where our work made an impact</h2><p>{p.impact}</p></article>
+      <article><h2>The difference in every detail</h2><p>{p.difference}</p></article>
+    </section>
+    <section className="case-study-deliverables">
+      <div className="container preparation-grid">
+        <div><h2>{p.resultsTitle}</h2></div>
+        <div><ul className="client-results">{p.results.map(r=><li key={r}><Check size={18}/> {r}</li>)}</ul></div>
+      </div>
+    </section>
+    <section className="container case-next">
+      <div><h2>{next.brand}</h2></div>
+      <Link href={'/work/'+next.id} className="text-link">See the next project <ArrowUpRight/></Link>
+    </section>
+  </>;
+}

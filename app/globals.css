@@ -406,3 +406,13 @@ button:focus-visible,a:focus-visible{outline:3px solid #bd7ccb;outline-offset:5p
 .industry-priorities{list-style:none}.industry-priorities li{padding:14px 0;border-bottom:1px solid #dbc9e5;color:#6b5177;line-height:1.7;font-size:1rem}.editorial-card-grid .industry-story-idea{font-size:1.25rem;line-height:1.55;margin-top:20px;color:#4e2d60}.industry-question{max-width:920px}.industry-question h2{font-size:2.1rem;line-height:1.2;margin-bottom:22px}.industry-question>p:not(.eyebrow){font-size:1.0625rem;line-height:1.8;color:#6c5279;margin-bottom:23px}
 .campaign-header .header-inner{gap:12px}.campaign-header .brand-logo{flex-shrink:0}
 @media(max-width:360px){.campaign-header-phone{display:none}.campaign-header .button{margin-left:auto}}
+
+
+
+/* Append to your global stylesheet */
+.portfolio-image{position:relative;aspect-ratio:1/1;width:100%;overflow:hidden;border-radius:1.25rem;background:#f3f1ee}
+.portfolio-image img{object-fit:cover}
+.portfolio-image-lg{border-radius:1.5rem}
+.client-results{list-style:none;padding:0;margin:0;display:grid;gap:.9rem}
+.client-results li{display:flex;gap:.75rem;align-items:center;font-size:1.1rem}
+.client-results svg{flex:none}

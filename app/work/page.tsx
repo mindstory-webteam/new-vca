@@ -1,4 +1,16 @@
 import {PageIntro,InlineCta} from '@/components/shared';
 import {WorkGallery} from '@/components/work-gallery';
-export const metadata={title:'Our Work — Local Creative Concepts',description:'Explore six fictional local business campaigns from Viral Cat, with creative ideas, sample deliverables and proposed ways to review response.',alternates:{canonical:'/work'}};
-export default function Page(){return <><PageIntro eyebrow="" title="Ideas for businesses" accent="like yours." description="A café with a story to tell. A shop worth stopping for. A class that deserves to be full. Here are a few ways we could help."/><section className="container content-area"><div className="portfolio-disclosure"><p>These sample projects use fictional businesses to show our approach. They are examples, rather than completed client campaigns.</p></div><WorkGallery/></section><InlineCta title="Like a direction? Let’s make it yours." text="Bring your real business details. We’ll find the story only you can tell."/></>}
+
+export const metadata={
+  title:'Our Work — Digital Experiences',
+  description:'Branding, social media and paid advertising work delivered by Viral Cat for Chaipeedika, Eqsoft, Mundukada and Benxora.',
+  alternates:{canonical:'/work'}
+};
+
+export default function Page(){
+  return <>
+    <PageIntro eyebrow="" title="Built with creativity," accent="strategy & purpose." description="Take a look at the branding projects, digital solutions, and creative work we’ve delivered for businesses looking to stand out, engage their audience, and grow in the digital space."/>
+    <section className="container content-area"><WorkGallery/></section>
+    <InlineCta title="Like what you see? Let’s make it yours." text="Bring your real business details. We’ll find the story only you can tell."/>
+  </>;
+}

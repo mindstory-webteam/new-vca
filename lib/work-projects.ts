@@ -1,8 +1,83 @@
-export const workProjects = [
- {id:'food',brand:'Kettle & Corner',category:'Food & cafés',title:'Your daily pause. Just around the corner.',poster:'GOOD\nMORNINGS.\nGREAT\nNEIGHBOURS.',color:'tangerine',type:'Brand story · Reels · Local discovery',intro:'A neighbourhood café becomes a familiar morning ritual through the people who make it happen.',challenge:'A fictional independent café wants nearby office workers and residents to remember it when choosing their next coffee stop.',insight:'A menu tells people what they can order. A familiar face gives them a reason to return.',idea:'Build a short morning series around the barista, the first pour and the regular who knows their order by heart.',deliverables:['Three short maker stories','A neighbourhood introduction carousel','Business profile photo direction','A visit-focused caption set'],scenes:['The shutters open. The first cup is poured.','The barista shares one small detail about the house blend.','A clear invitation connects the story to the café’s location.'],measure:'Review profile visits, direction requests and customer mentions. Compare the response to each story before deciding what to repeat.',service:'content-production'},
- {id:'retail',brand:'Elsewhere Living',category:'Retail & showrooms',title:'Something new. A familiar address.',poster:'SEE IT.\nFEEL IT.\nFIND\nYOUR FIT.',color:'violet',type:'Product storytelling · Social media',intro:'An independent home store turns product browsing into a reason to visit in person.',challenge:'A fictional home and lifestyle store wants to make its new collection feel approachable to nearby shoppers.',insight:'People often need scale, texture and a practical answer before they can imagine a product in their home.',idea:'Let a store expert answer one real buying question in each post. Show the object in use and invite customers to see it close up.',deliverables:['New-arrival content direction','Four product demonstration scripts','A collection carousel','Store-visit calls to action'],scenes:['One everyday room, one useful product.','A staff member demonstrates the detail a photograph cannot explain.','The closing frame invites a closer look in store.'],measure:'Look at saved content, product enquiries and store feedback. Record which products people ask to see after viewing a post.',service:'social-media'},
- {id:'beauty',brand:'Aara Studio',category:'Beauty & wellness',title:'A familiar face before your first visit.',poster:'COME AS\nYOU ARE.\nLEAVE\nFEELING YOU.',color:'rose',type:'Service explainer · Team introduction',intro:'A salon concept built around a calm, clear first appointment rather than an intimidating transformation.',challenge:'A fictional salon wants first-time customers to feel comfortable asking about its services.',insight:'Uncertainty about the appointment can be a bigger barrier than awareness of the salon.',idea:'Walk through a first visit with a team member: the conversation, the service and the care afterwards.',deliverables:['First-visit explainer reel','Team introduction posts','Appointment FAQ carousel','Booking-enquiry message direction'],scenes:['A welcome at the door, with a team member introducing themselves.','A consultation explains the options without making promises.','The customer sees how to ask about their own appointment.'],measure:'Track relevant appointment questions and confirmed bookings supplied by the salon. Use recurring questions to plan the next explainer.',service:'content-production'},
- {id:'fitness',brand:'First Rep Club',category:'Fitness & sports',title:'Your first rep starts with feeling welcome.',poster:'FIRST DAY.\nFIRST REP.\nYOUR\nPACE.',color:'lime',type:'Local campaign · Lead generation',intro:'A beginner-focused introduction to a fitness studio, built around confidence and a clear next step.',challenge:'A fictional studio wants to attract nearby beginners who feel unsure about joining a class.',insight:'People want to know what the room feels like before they walk into it.',idea:'Introduce the trainer, show the first ten minutes and invite people to ask about a beginner session.',deliverables:['Beginner-session campaign concept','Two short trainer-led videos','A focused enquiry page','An enquiry follow-up checklist'],scenes:['A trainer welcomes someone who has never attended.','The film shows the session setup and available support.','One invitation leads to a short enquiry form.'],measure:'Compare relevant enquiries with sessions confirmed by the studio. Separate enquiries, attendance and repeat visits.',service:'local-campaigns'},
- {id:'education',brand:'Next Chapter Academy',category:'Education & training',title:'One good question can open a new chapter.',poster:'BIG\nQUESTIONS.\nCLEAR\nNEXT STEPS.',color:'ink',type:'Faculty stories · Course clarity',intro:'An academy earns attention by making the questions before enrolment easier to answer.',challenge:'A fictional training centre needs to explain its courses without overwhelming prospective learners.',insight:'Course names mean little until someone understands the experience, requirements and learning path.',idea:'Build a question-led series with faculty, a classroom walkthrough and practical information for a first conversation.',deliverables:['Faculty Q&A story direction','Course comparison carousel','Learning-space walkthrough script','Course-enquiry content'],scenes:['Start with one question a prospective learner would ask.','A faculty member answers with a concrete classroom example.','Point to verified course details and an enquiry route.'],measure:'Review course-specific enquiries, question themes and counselling conversations. Avoid treating enquiries as enrolments.',service:'local-strategy'},
- {id:'services',brand:'Neighbourhood Fix',category:'Local services',title:'Be the name they know to call.',poster:'SMALL FIX.\nBIG SIGH\nOF\nRELIEF.',color:'sky',type:'Local discovery · Service storytelling',intro:'A practical service business makes its work, service area and contact route easy to understand.',challenge:'A fictional home maintenance business wants residents to know what it can help with and where it operates.',insight:'A clear service explanation can make a useful local introduction long before someone has an urgent problem.',idea:'Use simple demonstrations to show common jobs, explain what information to send and make the enquiry step obvious.',deliverables:['Service demonstration storyboards','Service-area information structure','Business profile review checklist','A job-enquiry template'],scenes:['Show a familiar household problem.','Explain what the service covers and what details are needed.','Invite an enquiry with a location and a short description.'],measure:'Review relevant calls and enquiries within the confirmed service area. Ask the business to record completed jobs separately.',service:'local-discovery'}
+export type WorkProject = {
+  id: string;
+  brand: string;
+  category: string;
+  businessType: string;
+  title: string;
+  focus: string;
+  start: string;
+  impact: string;
+  difference: string;
+  resultsTitle: string;
+  results: string[];
+  image: string;
+  imageAlt: string;
+  service: string;
+};
+
+export const workProjects: WorkProject[] = [
+  {
+    id: 'chaipeedika',
+    brand: 'Chaipeedika',
+    category: 'Restaurant',
+    businessType: 'Restaurant',
+    title: 'Digital Stories Of Authentic Flavours',
+    focus: 'Social Media Marketing & Paid Advertising',
+    start: 'We began our journey with Chaipeedika by creating engaging social media content and targeted ad campaigns that showcased its authentic flavours and dining experience.',
+    impact: 'After partnering with us, Chaipeedika developed a stronger social media presence, more engaging food content, improved brand visibility, and targeted advertising that helped the restaurant connect with a wider audience.',
+    difference: 'With a stronger focus on social media marketing, content creation, and paid advertising, Chaipeedika was able to improve its online visibility, showcase its food and restaurant experience, and engage with a broader audience.',
+    resultsTitle: 'A Digital Presence That Grew With The Brand',
+    results: ['Greater Visibility Among Local Foodies','More Interest Around Signature Flavours','Stronger Engagement With Food Content','Wider Reach Across Target Audiences','Better Recognition As A Restaurant'],
+    image: '/work/clients/chaipeedika.jpg',
+    imageAlt: 'Chaipeedika South Indian family restaurant storefront creative',
+    service: 'content-production'
+  },
+  {
+    id: 'eqsoft',
+    brand: 'Eqsoft',
+    category: 'Software',
+    businessType: 'Software & Business Solutions Company',
+    title: 'Powering Business With Smarter Digital Solutions!',
+    focus: 'Social Media Marketing & Paid Advertising',
+    start: 'We partnered with Eqsoft to build a stronger digital identity through technology-focused content and targeted campaigns, highlighting its ERP, POS, e-commerce, web, and mobile app solutions.',
+    impact: 'Our strategy gave Eqsoft a more professional online presence, clearer communication of its software solutions, and greater visibility among businesses looking for smarter digital solutions.',
+    difference: 'Through consistent social media marketing, creative content, and paid campaigns, we helped Eqsoft communicate its technology offerings more effectively while expanding its digital reach and strengthening brand awareness.',
+    resultsTitle: 'A Stronger Digital Face For Technology',
+    results: ['Greater Awareness Of Software Solutions','Clearer Communication Of Business Technologies','More Visibility Among Potential Clients','Stronger Interest In Digital Solutions','Better Positioning Within The Tech Space'],
+    image: '/work/clients/eqsoft.jpg',
+    imageAlt: 'Eqsoft smart software for smooth operations creative',
+    service: 'social-media'
+  },
+  {
+    id: 'mundukada',
+    brand: 'Mundukada',
+    category: 'Handloom',
+    businessType: 'Traditional Handloom Clothing Brand',
+    title: 'Taking Kerala’s Weaves Digital!',
+    focus: 'Social Media Marketing & Paid Advertising',
+    start: 'We set out to give Mundukada Clothing’s handloom heritage a stronger digital presence, creating content that showcased authentic Balaramapuram handloom dhotis, Kuthampully handloom sarees, and the craftsmanship behind every weave.',
+    impact: 'Our creative direction helped Mundukada Clothing communicate its authentic handloom story, highlight its direct-from-weavers approach, and connect traditional Kerala textiles with a wider online audience.',
+    difference: 'Our digital content highlighted Kerala handlooms, authentic textiles, and craftsmanship, helping Mundukada Clothing build awareness and connect with local weavers.',
+    resultsTitle: 'Tradition Reaching A Wider Audience',
+    results: ['Greater Appreciation For Kerala Handlooms','More Visibility For Authentic Weaves','Stronger Interest In Traditional Clothing','Wider Discovery Of Weaver Crafted Products','Deeper Connection With Heritage Fashion'],
+    image: '/work/clients/mundukada.jpg',
+    imageAlt: 'Mundukada handloom dhoti collection creative',
+    service: 'social-media'
+  },
+  {
+    id: 'benxora',
+    brand: 'Benxora Education',
+    category: 'Education',
+    businessType: 'Educational Consultancy & Study Guidance',
+    title: 'Where Career Guidance Meets Digital Reach',
+    focus: 'Social Media Marketing & Paid Advertising',
+    start: 'We built Benxora’s digital presence through informative social media content focused on career counselling, study guidance, and college admissions.',
+    impact: 'Our content strategy helped Benxora communicate its career counselling and college guidance services while strengthening its online presence among students and parents.',
+    difference: 'Through educational content, social media marketing, and targeted campaigns, we helped Benxora expand its digital reach and build awareness around its study guidance and admission consultancy services.',
+    resultsTitle: 'Connecting Guidance With The Digital World',
+    results: ['Greater Awareness Among Aspiring Students','More Visibility For Education Services','Stronger Interest In Career Guidance','Better Reach Among Student Communities','Clearer Understanding Of Admission Support'],
+    image: '/work/clients/benxora.jpg',
+    imageAlt: 'Benxora education consultancy creative',
+    service: 'local-strategy'
+  }
 ];
