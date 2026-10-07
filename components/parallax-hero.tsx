@@ -10,7 +10,7 @@ import {gsap} from '@/lib/gsap';
 const slides=[
   {first:'Big love.',second:'Local impact.',body:'We know the neighbourhood. Let’s make sure it knows you.',tag:'Cat Radar',note:'Be the name nearby.',service:'local-discovery',cta:'Find my Cat',href:'/cat-lab'},
   {first:'Real people.',second:'Great stories.',body:'Your people. Your products. Your personality. Content that feels right around here.',tag:'Cat Personality',note:'Give them a reason to care.',service:'content-production',cta:'Explore our services',href:'/services'},
-  {first:'Get closer.',second:'Grow together.',body:'Turn local curiosity into a visit, a booking or a good conversation.',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk about your business',href:'/contact'},
+  {first:'Get closer.',second:'together.',body:'Turn local curiosity into a visit, a booking or a good conversation.',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk about your business',href:'/contact'},
 ];
 const chipIcons=[<MapPin key="a" size={17}/>,<Sparkles key="b" size={17}/>,<MessageCircleHeart key="c" size={17}/>];
 
