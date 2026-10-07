@@ -1,125 +1,245 @@
 'use client';
 import Link from 'next/link';
-import {useCallback,useEffect,useRef,useState} from 'react';
-import {ArrowDown,ArrowUpRight,ChevronLeft,ChevronRight,Glasses,MapPin,MoveHorizontal,Pause,Play,Sparkles,ScanEye,RotateCcw} from 'lucide-react';
+import {useEffect,useRef,useState} from 'react';
+import {ArrowUpRight,Glasses,MapPin,MessageCircleHeart,RotateCcw,ScanEye,Sparkles} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {CursorCat,type CursorCatHandle} from './cursor-cat';
-import {bound,heroFrame,heroSlideProgress} from '@/lib/hero-motion';
-import {gsap,ScrollTrigger} from '@/lib/gsap';
+import RotatingText,{type RotatingTextRef} from './rotating-text';
+import {gsap} from '@/lib/gsap';
 
 const slides=[
-  {label:'Get found nearby',first:'Big love.',second:'Local impact.',body:'We know the neighbourhood. Let’s make sure it knows you.',word:'LOCAL',tag:'Cat Radar',note:'Be the name nearby.',service:'local-discovery',cta:'Find my Cat',href:'/cat-lab'},
-  {label:'Tell your story',first:'Real people.',second:'Great stories.',body:'Your people. Your products. Your personality. Content that feels right around here.',word:'STORY',tag:'Cat Personality',note:'Give them a reason to care.',service:'content-production',cta:'Explore our services',href:'/services'},
-  {label:'Bring people closer',first:'Get closer.',second:'Grow together.',body:'Turn local curiosity into a visit, a booking or a good conversation.',word:'GROW',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk about your business',href:'/contact'},
+  {first:'Big love.',second:'Local impact.',body:'We know the neighbourhood. Let’s make sure it knows you.',tag:'Cat Radar',note:'Be the name nearby.',service:'local-discovery',cta:'Find my Cat',href:'/cat-lab'},
+  {first:'Real people.',second:'Great stories.',body:'Your people. Your products. Your personality. Content that feels right around here.',tag:'Cat Personality',note:'Give them a reason to care.',service:'content-production',cta:'Explore our services',href:'/services'},
+  {first:'Get closer.',second:'Grow together.',body:'Turn local curiosity into a visit, a booking or a good conversation.',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk about your business',href:'/contact'},
 ];
+const chipIcons=[<MapPin key="a" size={17}/>,<Sparkles key="b" size={17}/>,<MessageCircleHeart key="c" size={17}/>];
 
+// How long each slide stays on screen (milliseconds)
+const SLIDE_DURATION=5000;
 
 export function ParallaxHero(){
-  const host=useRef<HTMLElement>(null),stage=useRef<HTMLDivElement>(null),world=useRef<HTMLDivElement>(null);
-  const catArt=useRef<CursorCatHandle>(null);
-  const [active,setActive]=useState(0),[reduced,setReduced]=useState(false),[compact,setCompact]=useState(false),[vision,setVision]=useState(false),[reaction,setReaction]=useState('');
-  const [fit,setFit]=useState(true);const reactionCount=useRef(0),timer=useRef<ReturnType<typeof setTimeout>|null>(null),gesture=useRef({x:0,y:0,down:false,moved:false});
-  const pinned=!reduced&&!compact&&fit;
-  const cinematic=useRef<gsap.core.Timeline|null>(null),catAction=useRef<gsap.core.Timeline|null>(null),pointerTween=useRef<gsap.core.Tween|null>(null),manualTween=useRef<gsap.core.Tween|null>(null),latest=useRef(active);latest.current=active;
+  const host=useRef<HTMLElement>(null),catLayer=useRef<HTMLDivElement>(null);
+  const catArt=useRef<CursorCatHandle>(null),lineA=useRef<RotatingTextRef>(null),lineB=useRef<RotatingTextRef>(null);
+  const [active,setActive]=useState(0),[paused,setPaused]=useState(false),[reduced,setReduced]=useState(false),[vision,setVision]=useState(false),[reaction,setReaction]=useState('');
+  const reactionCount=useRef(0),bubbleTimer=useRef<ReturnType<typeof setTimeout>|null>(null),catAction=useRef<gsap.core.Timeline|null>(null);
+
   useEffect(()=>{
-    const media=matchMedia('(prefers-reduced-motion: reduce)'),small=matchMedia('(max-width: 760px) and (max-height: 739px), (min-width: 761px) and (max-height: 699px)');
-    const sync=()=>{setReduced(media.matches||document.documentElement.dataset.reducedMotion==='true');setCompact(small.matches)};
-    sync();media.addEventListener('change',sync);small.addEventListener('change',sync);
+    const media=matchMedia('(prefers-reduced-motion: reduce)');
+    const sync=()=>setReduced(media.matches||document.documentElement.dataset.reducedMotion==='true');
+    sync();media.addEventListener('change',sync);
     const observer=new MutationObserver(sync);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-reduced-motion']});
-    return()=>{media.removeEventListener('change',sync);small.removeEventListener('change',sync);observer.disconnect();if(timer.current)clearTimeout(timer.current)};
+    return()=>{media.removeEventListener('change',sync);observer.disconnect();if(bubbleTimer.current)clearTimeout(bubbleTimer.current);catAction.current?.kill()};
   },[]);
-  const pose=useCallback((p:number)=>{const scene=world.current;if(!scene)return;const f=heroFrame(p);scene.style.setProperty('--world-yaw',`${reduced?0:f.yaw}deg`);scene.style.setProperty('--world-roll',`${reduced?0:f.roll}deg`);scene.style.setProperty('--world-z',`${reduced?0:f.depth}px`);scene.style.setProperty('--world-scale',String(reduced?1:f.scale));scene.style.setProperty('--world-travel',`${reduced?0:f.travel}px`);scene.style.setProperty('--bg-travel',`${reduced?0:-p*110}px`);host.current?.style.setProperty('--hero-progress',String(p));},[reduced]);
-  useEffect(()=>{
-    const root=host.current,view=stage.current,scene=world.current;if(!root||!view||!scene)return;
-    if(!pinned){pose(heroSlideProgress(latest.current));return}
-    const progress={value:0};const context=gsap.context(()=>{
-      cinematic.current=gsap.timeline({scrollTrigger:{trigger:root,start:()=>`top ${parseFloat(getComputedStyle(view).top)||0}px`,end:()=>'+='+Math.max(1,root.offsetHeight-view.offsetHeight),scrub:.8,invalidateOnRefresh:true}})
-        .to(progress,{value:1,duration:3,ease:'none',onUpdate:()=>{pose(progress.value);const next=heroFrame(progress.value).slide;setActive(previous=>previous===next?previous:next)}},0)
-        .to('.hero-scene-word',{xPercent:-20,rotation:-4,duration:3,ease:'none'},0)
-        .to('.hero-depth-caption',{y:-100,duration:3,ease:'none'},0)
-        .to(view,{'--scene-tint':'#ffe2bf',duration:1.5,ease:'sine.inOut'},0)
-        .to(view,{'--scene-tint':'#dec4f0',duration:1.5,ease:'sine.inOut'},1.5);
-    },root);
-    const frame=requestAnimationFrame(()=>ScrollTrigger.refresh());return()=>{cancelAnimationFrame(frame);context.revert();cinematic.current=null};
-  },[pinned,pose]);
-  useEffect(()=>{if(reduced)return;const root=host.current;if(!root)return;const context=gsap.context(()=>{gsap.fromTo('.hero-copy-frame h1',{y:22,opacity:.3},{y:0,opacity:1,duration:.7,ease:'power3.out'});gsap.fromTo('.hero-copy-frame p',{y:12,opacity:.4},{y:0,opacity:1,duration:.55,delay:.12,ease:'power2.out'});gsap.fromTo('.hero-service-float',{x:18},{x:0,duration:.7,ease:'back.out(1.3)'})},root);return()=>context.revert()},[active,reduced]);
-  useEffect(()=>{if(reduced||!host.current)return;const context=gsap.context(()=>{gsap.fromTo('.cat-arrival',{y:38,rotationY:0,rotation:-3,scale:.96},{y:0,rotationY:0,rotation:0,scale:1,duration:1.15,ease:'power3.out',delay:.15});gsap.fromTo('.hero-scene-word',{y:70},{y:0,duration:1.8,ease:'power3.out'});},host);return()=>context.revert()},[reduced]);
-  useEffect(()=>()=>{catAction.current?.kill();pointerTween.current?.kill();manualTween.current?.kill();gsap.killTweensOf(window)},[]);
-  useEffect(()=>{const view=stage.current;if(!view)return;const check=()=>{const header=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height'))||88;setFit(view.scrollHeight<=window.innerHeight-header+2)};const observer=new ResizeObserver(check);observer.observe(view);window.addEventListener('resize',check);document.fonts.ready.then(check);check();return()=>{observer.disconnect();window.removeEventListener('resize',check)}},[]);
-  function choose(index:number){const next=(index+slides.length)%slides.length;const root=host.current,view=stage.current;if(!pinned||!root||!view){setActive(next);manualTween.current?.kill();const value={p:heroSlideProgress(latest.current)};manualTween.current=gsap.to(value,{p:heroSlideProgress(next),duration:reduced?0:.85,ease:'power2.inOut',onUpdate:()=>pose(value.p)});return}const top=parseFloat(getComputedStyle(view).top)||0;gsap.to(window,{scrollTo:{y:window.scrollY+root.getBoundingClientRect().top-top+(root.offsetHeight-view.offsetHeight)*heroSlideProgress(next),autoKill:true},duration:.95,ease:'power2.inOut',overwrite:'auto'})}
-  function resetPointer(){if(!world.current)return;pointerTween.current?.kill();pointerTween.current=gsap.to(world.current,{'--pointer-x':'0deg','--pointer-y':'0deg',duration:reduced?0:.65,ease:'power3.out'})}
+
+  // one timer drives the headline, body, CTA and chip
+  useEffect(()=>{if(paused||reduced)return;const id=setTimeout(()=>setActive(a=>(a+1)%slides.length),SLIDE_DURATION);return()=>clearTimeout(id)},[active,paused,reduced]);
+  useEffect(()=>{lineA.current?.jumpTo(active);lineB.current?.jumpTo(active)},[active]);
+
+  // entrance: the cat rises from the bottom edge, copy fades up
+  useEffect(()=>{if(reduced||!host.current)return;const ctx=gsap.context(()=>{
+    const tl=gsap.timeline({defaults:{ease:'power4.out'}});
+    tl.fromTo('.vc-halo',{scale:.85,opacity:0},{scale:1,opacity:1,duration:1.6},0)
+      .fromTo('.vc-cat-rise',{yPercent:100},{yPercent:0,duration:1.6},.1)
+      .fromTo('.vc-reveal',{y:28,opacity:0},{y:0,opacity:1,duration:1,stagger:.09},.25)
+      .fromTo('.vc-float',{y:16,opacity:0},{y:0,opacity:1,duration:.9,stagger:.1},1.1);
+  },host);return()=>ctx.revert()},[reduced]);
+
   function playCat(action:'pounce'|'peek'|'wave'|'reset'){
-    // the video frames: wave → waving clip, pounce → laugh clip, peek → look around, reset → thinking pose
     catArt.current?.play(action==='pounce'?'laugh':action);
-    const layer=host.current?.querySelector('.cat-action-layer'),shadow=host.current?.querySelector('.cat-contact-shadow');if(!layer)return;
-    catAction.current?.kill();gsap.set(layer,{x:0,y:0,rotation:0,rotationY:0,scale:1,scaleX:1,scaleY:1,transformOrigin:'50% 85%'});if(shadow)gsap.set(shadow,{scale:1,opacity:.65});
-    if(action==='reset'){resetPointer();setVision(false);setReaction('Ready for a little curiosity.');}
-    else {setReaction(action==='pounce'?'A little leap. A lot of local.':action==='wave'?'Hello, neighbour!':'Follow your curiosity.');if(!reduced){const timeline=gsap.timeline();catAction.current=timeline;
-      if(action==='wave'){timeline.to(layer,{rotation:-5,y:-8,duration:.32,ease:'sine.out'}).to(layer,{rotation:4,y:-3,duration:.46,ease:'sine.inOut'}).to(layer,{rotation:0,y:0,duration:.4,ease:'sine.inOut'})}
-      else if(action==='pounce'){timeline.to(layer,{y:compact?-30:-52,rotation:-3,duration:.38,ease:'power2.out'}).to(layer,{y:0,rotation:0,duration:.48,ease:'power2.in'});if(shadow)timeline.to(shadow,{scale:.78,opacity:.3,duration:.38},0).to(shadow,{scale:1,opacity:.65,duration:.48},.38)}
-      else{timeline.to(layer,{x:16,rotation:4,duration:.45,ease:'sine.inOut'}).to(layer,{x:-12,rotation:-3,duration:.65,ease:'sine.inOut'}).to(layer,{x:0,rotation:0,duration:.45,ease:'sine.inOut'})}
-    }}
-    if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setReaction(''),2500);
+    const layer=catLayer.current;if(!layer)return;
+    catAction.current?.kill();gsap.set(layer,{x:0,y:0,rotation:0,transformOrigin:'50% 100%'});
+    if(action==='reset'){setVision(false);setReaction('Ready for a little curiosity.')}
+    else{
+      setReaction(action==='pounce'?'A little leap. A lot of local.':action==='wave'?'Hello, neighbour!':'Follow your curiosity.');
+      if(!reduced){const tl=gsap.timeline();catAction.current=tl;
+        if(action==='wave')tl.to(layer,{rotation:-2.5,y:-8,duration:.32,ease:'sine.out'}).to(layer,{rotation:2,y:-3,duration:.46,ease:'sine.inOut'}).to(layer,{rotation:0,y:0,duration:.4,ease:'sine.inOut'});
+        else if(action==='pounce')tl.to(layer,{y:-40,duration:.38,ease:'power2.out'}).to(layer,{y:0,duration:.5,ease:'bounce.out'});
+        else tl.to(layer,{x:18,rotation:2,duration:.45,ease:'sine.inOut'}).to(layer,{x:-14,rotation:-2,duration:.65,ease:'sine.inOut'}).to(layer,{x:0,rotation:0,duration:.45,ease:'sine.inOut'});
+      }
+    }
+    if(bubbleTimer.current)clearTimeout(bubbleTimer.current);bubbleTimer.current=setTimeout(()=>setReaction(''),2500);
   }
-  function react(){if(gesture.current.moved)return;playCat((['wave','pounce','peek'] as const)[reactionCount.current++%3])}
-  function toggleMotion(){const next=!reduced;document.documentElement.dataset.reducedMotion=String(next);try{localStorage.setItem('vc-reduce-motion',next?'1':'0')}catch{}setReduced(next||matchMedia('(prefers-reduced-motion: reduce)').matches)}
+  const react=()=>playCat((['wave','pounce','peek'] as const)[reactionCount.current++%3]);
+
+  // headline motion: letters rise out of a mask, one after another
+  const rt={
+    auto:false,
+    staggerDuration:reduced?0:.022,
+    staggerFrom:'first' as const,
+    initial:{y:'105%',opacity:0},animate:{y:0,opacity:1},exit:{y:'-105%',opacity:0},
+    transition:reduced?{duration:0}:{type:'spring' as const,damping:30,stiffness:380},
+    splitLevelClassName:'vc-rt-word',
+  };
+
   const slide=slides[active];
-  return <section ref={host} id="follow-the-cat" className={'parallax-hero hero-fullbleed '+(pinned?'hero-is-pinned':'hero-is-static')+(reduced?' hero-calm':'')} aria-label="Viral Cat introduction">
-    <div ref={stage} className="parallax-stage" onPointerMove={event=>{if(reduced||event.pointerType!=='mouse'||!world.current)return;const r=event.currentTarget.getBoundingClientRect();pointerTween.current?.kill();pointerTween.current=gsap.to(world.current,{'--pointer-x':`${(bound((event.clientX-r.left)/r.width)-.5)*8}deg`,'--pointer-y':`${(bound((event.clientY-r.top)/r.height)-.5)*-5}deg`,duration:.5,ease:'power3.out'})}} onPointerLeave={resetPointer}><div className="hero-scene-backdrop" aria-hidden="true"><span className="hero-scene-word">{slide.word}<span>.</span></span></div>
+  return <section ref={host} id="follow-the-cat" className={'vc-hero'+(reduced?' vc-calm':'')+(vision?' vc-vision':'')} aria-label="Viral Cat introduction">
+    {/* still background: no motion, no effects */}
+    <div className="vc-bg" aria-hidden="true"/>
 
-      <div className="parallax-layout container">
-        <div className="parallax-copy">
-
-          <div key={active} className="hero-copy-frame" aria-live="polite" aria-atomic="true"><h1>{slide.first}<br/><em>{slide.second}</em></h1><p>{slide.body}</p></div>
-          <div className="parallax-actions"><Button asChild className="button purple"><Link href={slide.href}>{slide.cta}<ArrowUpRight/></Link></Button><Link className="hero-secondary" href="/cat-lab/check">Check my local presence <ArrowUpRight size={17}/></Link></div>
-          <p className="hero-brand-signoff">A little curious. Very local.<br/><strong>A chapter of MINDSTORY.</strong></p>
-        </div>
-        <div ref={world} className={'hero-world mascot-original-on '+(vision?'cat-vision-on ':'')+(reaction?'cat-reacting':'')} onPointerMove={event=>{const g=gesture.current;if(g.down&&Math.hypot(event.clientX-g.x,event.clientY-g.y)>10)g.moved=true;}} onPointerLeave={resetPointer} onPointerDown={event=>{gesture.current={x:event.clientX,y:event.clientY,down:true,moved:false}}} onPointerUp={event=>{const g=gesture.current;g.down=false;const dx=event.clientX-g.x,dy=event.clientY-g.y;if(event.pointerType!=='mouse'&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)choose(active+(dx<0?1:-1))}} onPointerCancel={()=>{gesture.current.down=false;resetPointer()}}>
-          <div className="hero-open-scene">
-
-            <span className="cat-interaction-hint"><MoveHorizontal size={16}/> Move your cursor. The Cat is watching.</span>
-            <div className="cat-perspective"><div className="cat-depth-position"><div className="cat-arrival"><div className="cat-action-layer"><div className="cat-logo-sculpture">
-              <button className="cat-art-front" onClick={event=>{if(event.detail===0)gesture.current.moved=false;react()}} aria-label="Play with the Viral Cat mascot"><CursorCat ref={catArt}/></button>
-            </div></div></div></div><div className="cat-contact-shadow" aria-hidden="true"/></div>
-
-            <Link key={slide.tag} className="hero-service-float" href={'/services/'+slide.service}><span className="float-icon">{active===1?<Sparkles size={22}/>:<MapPin size={22}/>}</span><span><small>{slide.tag}</small><strong>{slide.note}</strong></span><ArrowUpRight size={18}/></Link>
-            {vision&&<div className="hero-vision-links"><Link href="/services/local-discovery">Get found <ArrowUpRight size={15}/></Link><Link href="/services/content-production">Tell your story <ArrowUpRight size={15}/></Link><Link href="/services/local-campaigns">Reach nearby <ArrowUpRight size={15}/></Link></div>}
-            <span className={'mascot-reaction '+(reaction?'visible':'')} role="status">{reaction}</span>
-          </div>
-          <div className="hero-playbar cat-animation-controls" aria-label="Play with the Cat"><Button variant="ghost" onClick={()=>playCat('wave')}>Say hello</Button><Button variant="ghost" onClick={()=>playCat('pounce')}><Sparkles size={17}/> Pounce</Button><Button variant="ghost" onClick={()=>playCat('peek')}><ScanEye size={17}/> Peek</Button><Button variant="ghost" aria-pressed={vision} onClick={()=>setVision(!vision)}><Glasses size={18}/> Cat Vision</Button><Button variant="ghost" size="icon" onClick={()=>playCat('reset')} aria-label="Reset Cat animation"><RotateCcw size={17}/></Button></div>
+    {/* RIGHT: full-height stage, cat anchored to the bottom edge */}
+    <div className="vc-stage">
+      <div className="vc-halo" aria-hidden="true"><span className="vc-ring"/></div>
+      <div className="vc-cat-rise">
+        <div ref={catLayer} className="vc-cat-layer">
+          <button className="vc-cat-btn" onClick={react} aria-label="Play with the Viral Cat mascot"><CursorCat ref={catArt}/></button>
         </div>
       </div>
-      <div className="hero-navigation container"><div className="hero-slide-selector" aria-label="Choose an introduction slide">{slides.map((s,i)=><Button key={s.label} variant="ghost" aria-pressed={i===active} onClick={()=>choose(i)} className={active===i?'is-active':''}><strong>{s.label}</strong></Button>)}</div><div className="hero-slider-actions"><Button size="icon" variant="outline" onClick={()=>choose(active-1)} aria-label="Previous hero slide"><ChevronLeft/></Button><Button size="icon" variant="outline" onClick={()=>choose(active+1)} aria-label="Next hero slide"><ChevronRight/></Button><Button size="icon" variant="ghost" onClick={toggleMotion} aria-label={reduced?'Enable animation':'Reduce animation'} aria-pressed={reduced}>{reduced?<Play size={17}/>:<Pause size={17}/>}</Button></div><a href="#neighbourhood" className="hero-scroll-down"><span>{pinned?'Scroll to explore':'Explore the neighbourhood'}</span><ArrowDown size={18}/></a></div>
-      <div className="hero-reading-progress" aria-hidden="true"/>
+      <span className={'vc-bubble'+(reaction?' show':'')} role="status">{reaction}</span>
+
+      <div className="vc-chips vc-float">
+        {slides.map((s,i)=>(i===active||vision)&&<Link key={s.service} href={'/services/'+s.service} className={'vc-chip'+(i===active?' is-active':'')}>
+          <span className="vc-chip-icon">{chipIcons[i]}</span>
+          <span><small>{s.tag}</small><strong>{s.note}</strong></span>
+          <ArrowUpRight size={14}/>
+        </Link>)}
+      </div>
+
+      <div className="vc-playbar vc-float" aria-label="Play with the Cat">
+        <button onClick={()=>playCat('wave')}>Say hello</button>
+        <button onClick={()=>playCat('pounce')}><Sparkles size={14}/> Pounce</button>
+        <button onClick={()=>playCat('peek')}><ScanEye size={14}/> Peek</button>
+        <button aria-pressed={vision} onClick={()=>setVision(v=>!v)}><Glasses size={15}/> Cat Vision</button>
+        <button className="vc-icon" onClick={()=>playCat('reset')} aria-label="Reset Cat animation"><RotateCcw size={14}/></button>
+      </div>
     </div>
-    {/* Cursor-following cat: centred and large in the right-hand column */}
+
+    {/* LEFT: copy */}
+    <div className="vc-inner">
+      <div className="vc-copy" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={()=>setPaused(false)}>
+        <h1 className="vc-title vc-reveal">
+          <RotatingText ref={lineA} texts={slides.map(s=>s.first)} mainClassName="vc-line" {...rt}/>
+          <RotatingText ref={lineB} texts={slides.map(s=>s.second)} mainClassName="vc-line vc-line-accent" {...rt}/>
+        </h1>
+        <p key={'b'+active} className="vc-body">{slide.body}</p>
+        <div className="vc-actions vc-reveal">
+          <Button asChild className="button purple"><Link href={slide.href}>{slide.cta}<ArrowUpRight/></Link></Button>
+          <Link className="vc-secondary" href="/cat-lab/check">Check my local presence <ArrowUpRight size={16}/></Link>
+        </div>
+        <div className="vc-meta vc-reveal">
+          <span className="vc-count" aria-hidden="true">
+            <b>{String(active+1).padStart(2,'0')}</b>
+            <span className="vc-track"><i key={active} style={{animationDuration:SLIDE_DURATION+'ms',animationPlayState:paused||reduced?'paused':'running'}}/></span>
+            <span>{String(slides.length).padStart(2,'0')}</span>
+          </span>
+          <span className="vc-signoff">A chapter of <strong>MINDSTORY</strong></span>
+        </div>
+      </div>
+    </div>
+
     <style>{`
-      /* the right column becomes a centred stage */
-      #follow-the-cat .hero-world{position:relative}
-      #follow-the-cat .hero-world .hero-open-scene{position:relative;display:flex!important;align-items:center;justify-content:center}
-      /* old SVG-cat wrappers: no fixed size or offsets, centred in the column */
-      #follow-the-cat .hero-world .cat-perspective,
-      #follow-the-cat .hero-world .cat-depth-position{
-        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
-        width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;
-        margin:0 auto!important;display:flex!important;justify-content:center!important;align-items:center!important;translate:none!important}
-      #follow-the-cat .hero-world .cat-depth-position{transform:none!important}
-      #follow-the-cat .hero-world .cat-arrival,
-      #follow-the-cat .hero-world .cat-action-layer,
-      #follow-the-cat .hero-world .cat-logo-sculpture{
-        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;
-        width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;
-        margin:0 auto!important;display:flex!important;justify-content:center!important}
-      /* the cat itself: fills the column, never wider than it */
-      #follow-the-cat .hero-world .cat-art-front{
-        /* change the 760px to make the cat bigger or smaller */
-        width:min(100%,760px)!important;max-width:100%!important;height:auto!important;max-height:none!important;
-        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;
-        display:block!important;margin:0 auto!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
-      #follow-the-cat .hero-world .cat-art-front .cursor-cat,
-      #follow-the-cat .hero-world .cat-art-front canvas{width:100%!important;height:auto!important;max-width:none!important}
-      #follow-the-cat .hero-world .cat-contact-shadow{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(60%,460px)!important}
-      @media (max-width:760px){#follow-the-cat .hero-world .cat-art-front{width:min(100%,520px)!important}}
+      /* theme tokens — taken from the cat: purple fur + orange goggles */
+      .vc-hero{
+        --vc-bg:#f4eefa;--vc-ink:#22132f;--vc-muted:#6f6280;--vc-purple:#7b2fa8;--vc-orange:#f28c28;--vc-lilac:#e6d6f3;
+        --vc-line:rgba(34,19,47,.09);--vc-glass:rgba(255,255,255,.66);
+        /* cat size: share of the banner height the cat may use (raise for bigger) */
+        --cat-height:96;
+        position:relative;overflow:hidden;isolation:isolate;font-family:inherit;color:var(--vc-ink);background:var(--vc-bg);
+        min-height:max(640px,calc(100svh - var(--header-height,88px)));display:flex;align-items:center;
+      }
+
+      /* ── background: soft, still light in the cat's colours ── */
+      .vc-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;
+        background:
+          /* purple glow behind the cat (its fur) */
+          radial-gradient(52% 72% at 74% 52%,rgba(160,98,214,.42) 0%,rgba(160,98,214,.16) 45%,rgba(160,98,214,0) 75%),
+          /* warm orange touch low on the right (its goggles) */
+          radial-gradient(28% 36% at 90% 88%,rgba(242,140,40,.16) 0%,rgba(242,140,40,0) 70%),
+          /* peach glow bottom-left, under the copy */
+          radial-gradient(42% 55% at 0% 100%,rgba(255,214,176,.75) 0%,rgba(255,214,176,0) 70%),
+          /* light lilac wash top-left */
+          radial-gradient(45% 50% at 20% 0%,rgba(236,224,247,1) 0%,rgba(236,224,247,0) 70%),
+          linear-gradient(180deg,#f7f3fb 0%,#f1e9f8 60%,#ece1f6 100%)}
+      /* fine paper grain for a premium finish (static) */
+      .vc-bg::after{content:'';position:absolute;inset:0;opacity:.045;mix-blend-mode:multiply;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+      /* left copy column */
+      .vc-inner{position:relative;z-index:3;width:100%;max-width:1440px;margin:0 auto;padding:clamp(48px,7vh,96px) clamp(20px,5vw,80px);pointer-events:none}
+      .vc-copy{width:min(100%,520px);pointer-events:auto}
+      .vc-title{margin:0;font-size:clamp(2.8rem,5vw,5.2rem);line-height:1.02;letter-spacing:-.045em;font-weight:700;color:var(--vc-ink)}
+      .vc-line{display:flex!important}
+      .vc-line-accent{color:var(--vc-purple);font-style:italic}
+      .vc-rt-word{overflow:hidden;padding:0 .06em .14em 0;margin-bottom:-.14em}
+      .vc-body{margin:28px 0 0;max-width:34ch;font-size:clamp(1.02rem,1.2vw,1.15rem);line-height:1.6;color:var(--vc-muted);animation:vc-in .7s .15s both cubic-bezier(.2,.7,.2,1)}
+      @keyframes vc-in{from{opacity:0;transform:translateY(10px)}}
+      .vc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 28px;margin-top:40px}
+      .vc-secondary{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.98rem;color:var(--vc-ink);text-decoration:none;opacity:.8;transition:opacity .2s,color .2s}
+      .vc-secondary:hover{opacity:1;color:var(--vc-purple)}
+      .vc-meta{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:64px;padding-top:20px;border-top:1px solid var(--vc-line);font-size:.82rem;color:var(--vc-muted)}
+      .vc-count{display:inline-flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+      .vc-count b{color:var(--vc-ink);font-weight:600}
+      .vc-track{position:relative;width:64px;height:1px;background:var(--vc-line);overflow:hidden}
+      .vc-track i{position:absolute;inset:0;background:var(--vc-ink);transform-origin:left;animation:vc-fill linear forwards}
+      @keyframes vc-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+      .vc-signoff strong{color:var(--vc-ink);font-weight:600;letter-spacing:.08em}
+
+      /* right stage: full height, edge to edge on the right */
+      .vc-stage{position:absolute;top:0;right:0;bottom:0;width:58%;z-index:2;container-type:size}
+      /* soft light disc behind the cat's head, with one hairline ring */
+      .vc-halo{position:absolute;left:52%;top:46%;width:min(82cqw,76cqh);aspect-ratio:1;border-radius:50%;translate:-50% -50%;
+        background:radial-gradient(circle at 50% 46%,rgba(255,255,255,.92) 0%,rgba(255,255,255,.45) 38%,rgba(255,255,255,0) 68%)}
+      .vc-ring{position:absolute;inset:-2%;border-radius:50%;border:1px solid rgba(123,47,168,.12)}
+      .vc-ring::after{content:'';position:absolute;inset:-1px;border-radius:50%;opacity:0;transition:opacity .4s;
+        background:conic-gradient(from 0deg,rgba(242,140,40,.55),transparent 18%);
+        -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));mask:radial-gradient(closest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));
+        animation:vc-spin 3s linear infinite}
+      .vc-vision .vc-ring::after{opacity:1}
+      @keyframes vc-spin{to{rotate:360deg}}
+
+      /* the cat: sits on the bottom edge and fills the height; never wider than the stage */
+      .vc-cat-rise{position:absolute;bottom:0;right:-2%;width:min(104cqw,calc(var(--cat-height) * 1cqh * 1.46))}
+      .vc-cat-layer{will-change:transform}
+      .vc-cat-btn{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer}
+      .vc-cat-btn:focus-visible{outline:2px solid var(--vc-purple);outline-offset:-6px;border-radius:24px}
+      .vc-cat-btn .cursor-cat,.vc-cat-btn canvas{width:100%!important;height:auto!important;display:block}
+      .vc-stage::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12%;background:linear-gradient(to top,#ece1f6,rgba(236,225,246,0));z-index:2;pointer-events:none}
+
+      .vc-bubble{position:absolute;top:10%;left:18%;z-index:4;padding:10px 16px;border-radius:16px 16px 4px 16px;background:var(--vc-ink);color:#fff;font-weight:500;font-size:.9rem;
+        opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;pointer-events:none;max-width:240px}
+      .vc-bubble.show{opacity:1;transform:none}
+
+      .vc-chips{position:absolute;left:4%;top:50%;z-index:4;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+      .vc-chip{display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;border-radius:18px;text-decoration:none;color:var(--vc-ink);
+        background:var(--vc-glass);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(16px) saturate(1.4);
+        box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 18px 40px -18px rgba(60,20,100,.4);animation:vc-in .6s both cubic-bezier(.2,.7,.2,1);transition:transform .25s}
+      .vc-chip:hover{transform:translateY(-2px)}
+      .vc-chip small{display:block;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--vc-muted)}
+      .vc-chip strong{display:block;font-size:.92rem;font-weight:600}
+      .vc-chip-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--vc-lilac);color:var(--vc-purple);flex:none}
+      .vc-chip.is-active .vc-chip-icon{background:var(--vc-orange);color:#fff}
+
+      .vc-playbar{position:absolute;left:50%;bottom:28px;translate:-50% 0;z-index:5;display:flex;gap:2px;padding:4px;border-radius:999px;white-space:nowrap;
+        background:var(--vc-glass);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 18px 40px -20px rgba(60,20,100,.45)}
+      .vc-playbar button{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:0;border-radius:999px;background:none;font:inherit;font-size:.82rem;font-weight:500;color:var(--vc-muted);cursor:pointer;transition:background .2s,color .2s}
+      .vc-playbar button:hover{color:var(--vc-ink);background:rgba(255,255,255,.95)}
+      .vc-playbar button[aria-pressed="true"]{background:var(--vc-ink);color:#fff}
+      .vc-playbar button:focus-visible{outline:2px solid var(--vc-purple);outline-offset:2px}
+      .vc-playbar .vc-icon{padding:8px 10px}
+
+      .vc-calm .vc-ring::after,.vc-calm .vc-body,.vc-calm .vc-chip{animation:none}
+
+      /* tablet & mobile: copy on top, cat rises from the bottom underneath */
+      @media (max-width:1024px){
+        .vc-hero{flex-direction:column;align-items:stretch;min-height:0}
+        .vc-bg{background:
+          radial-gradient(80% 45% at 50% 78%,rgba(160,98,214,.40) 0%,rgba(160,98,214,0) 75%),
+          radial-gradient(50% 30% at 85% 95%,rgba(242,140,40,.14) 0%,rgba(242,140,40,0) 70%),
+          radial-gradient(70% 35% at 0% 30%,rgba(255,214,176,.6) 0%,rgba(255,214,176,0) 70%),
+          linear-gradient(180deg,#f7f3fb 0%,#f1e9f8 55%,#ece1f6 100%)}
+        .vc-inner{order:1;padding-bottom:12px}
+        .vc-copy{width:100%;max-width:600px}
+        .vc-meta{margin-top:40px}
+        .vc-stage{order:2;position:relative;width:100%;height:min(72svh,620px)}
+        .vc-cat-rise{right:auto;left:50%;translate:-50% 0;width:min(110cqw,calc(var(--cat-height) * 1cqh * 1.46))}
+        .vc-chips{left:16px;top:auto;bottom:84px}
+        .vc-bubble{left:auto;right:6%;top:6%}
+      }
+      @media (max-width:640px){
+        .vc-stage{height:min(60svh,480px)}
+        .vc-chips{display:none}
+        .vc-playbar{bottom:16px;max-width:calc(100% - 24px);overflow-x:auto;scrollbar-width:none}
+        .vc-playbar button{padding:7px 10px}
+      }
     `}</style>
   </section>;
 }
