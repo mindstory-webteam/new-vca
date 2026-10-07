@@ -8,9 +8,9 @@ import RotatingText,{type RotatingTextRef} from './rotating-text';
 import {gsap} from '@/lib/gsap';
 
 const slides=[
-  {first:'Big love.',second:'Local impact.',body:'We know the neighbourhood. Let’s make sure it knows you.',tag:'Cat Radar',note:'Be the name nearby.',service:'local-discovery',cta:'Find my Cat',href:'/cat-lab'},
-  {first:'Real people.',second:'Great stories.',body:'Your people. Your products. Your personality. Content that feels right around here.',tag:'Cat Personality',note:'Give them a reason to care.',service:'content-production',cta:'Explore our services',href:'/services'},
-  {first:'Get closer.',second:'together.',body:'Turn local curiosity into a visit, a booking or a good conversation.',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk about your business',href:'/contact'},
+  {first:'Big love.',second:'Local impact.',body:'Be the name your neighbourhood knows.',tag:'Cat Radar',note:'Be the name nearby.',service:'local-discovery',cta:'Find my Cat',href:'/cat-lab'},
+  {first:'Real people.',second:'Great stories.',body:'Content that feels like home.',tag:'Cat Personality',note:'Give them a reason to care.',service:'content-production',cta:'Our services',href:'/services'},
+  {first:'Get closer.',second:'together.',body:'Turn curiosity into customers.',tag:'Cat Signal',note:'Your next customer is closer.',service:'local-campaigns',cta:'Let’s talk',href:'/contact'},
 ];
 const chipIcons=[<MapPin key="a" size={17}/>,<Sparkles key="b" size={17}/>,<MessageCircleHeart key="c" size={17}/>];
 
@@ -113,7 +113,7 @@ export function ParallaxHero(){
         <p key={'b'+active} className="vc-body">{slide.body}</p>
         <div className="vc-actions vc-reveal">
           <Button asChild className="button purple"><Link href={slide.href}>{slide.cta}<ArrowUpRight/></Link></Button>
-          <Link className="vc-secondary" href="/cat-lab/check">Check my local presence <ArrowUpRight size={16}/></Link>
+          <Link className="vc-secondary" href="/cat-lab/check">Free local check</Link>
         </div>
         <div className="vc-meta vc-reveal">
           <span className="vc-count" aria-hidden="true">
@@ -160,11 +160,16 @@ export function ParallaxHero(){
       .vc-line{display:flex!important}
       .vc-line-accent{color:var(--vc-purple);font-style:italic}
       .vc-rt-word{overflow:hidden;padding:0 .06em .14em 0;margin-bottom:-.14em}
-      .vc-body{margin:28px 0 0;max-width:34ch;font-size:clamp(1.02rem,1.2vw,1.15rem);line-height:1.6;color:var(--vc-muted);animation:vc-in .7s .15s both cubic-bezier(.2,.7,.2,1)}
+      .vc-body{margin:24px 0 0;max-width:30ch;font-size:clamp(1.02rem,1.2vw,1.15rem);line-height:1.6;color:var(--vc-muted);animation:vc-in .7s .15s both cubic-bezier(.2,.7,.2,1)}
       @keyframes vc-in{from{opacity:0;transform:translateY(10px)}}
-      .vc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 28px;margin-top:40px}
-      .vc-secondary{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.98rem;color:var(--vc-ink);text-decoration:none;opacity:.8;transition:opacity .2s,color .2s}
-      .vc-secondary:hover{opacity:1;color:var(--vc-purple)}
+      /* two buttons on one row, same height, same corner radius */
+      .vc-actions{display:flex;align-items:center;gap:12px;margin-top:36px}
+      .vc-actions > a{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px!important;padding:0 26px!important;
+        border-radius:14px!important;font-size:1rem;font-weight:600;line-height:1;white-space:nowrap;text-decoration:none;box-sizing:border-box}
+      .vc-actions > a svg{width:18px;height:18px;flex:none}
+      .vc-secondary{color:var(--vc-ink);background:rgba(255,255,255,.55);border:1px solid rgba(34,19,47,.14);backdrop-filter:blur(8px);transition:background .2s,border-color .2s,color .2s}
+      .vc-secondary:hover{background:#fff;border-color:rgba(123,47,168,.35);color:var(--vc-purple)}
+      @media (max-width:420px){.vc-actions{flex-direction:column;align-items:stretch}.vc-actions > a{width:100%}}
       .vc-meta{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:64px;padding-top:20px;border-top:1px solid var(--vc-line);font-size:.82rem;color:var(--vc-muted)}
       .vc-count{display:inline-flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
       .vc-count b{color:var(--vc-ink);font-weight:600}
